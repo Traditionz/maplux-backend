@@ -1,4 +1,4 @@
-For the front-end project, you can run:
+For the backend project, you can run:
 
 ### `uvicorn main:app --reload`
 
