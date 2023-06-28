@@ -6,6 +6,9 @@ class UserBase(BaseModel):
     first_name: str
     last_name: str
 
+    class Config:
+        orm_mode = True
+
 
 class UserCreate(UserBase):
     password_hashed: str
