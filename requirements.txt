@@ -1,0 +1,6 @@
+FastAPI
+pydantic
+sqlalchemy
+uvicorn
+python-dotenv
+starlette
