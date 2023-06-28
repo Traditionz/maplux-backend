@@ -7,6 +7,9 @@ class UserStatusBase(BaseModel):
     is_active: bool
     is_banned: bool
 
+    class Config:
+        orm_mode = True
+
 
 class UserStatusCreate(UserStatusBase):
     pass
@@ -15,5 +18,4 @@ class UserStatusCreate(UserStatusBase):
 class UserStatus(UserStatusBase):
     pass
 
-    class Config:
-        orm_mode = True
+

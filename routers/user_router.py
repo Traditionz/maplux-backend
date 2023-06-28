@@ -7,7 +7,7 @@ from domain.user import repository, schemas
 router = APIRouter()
 
 
-@router.post("/user/", response_model=schemas.User)
+@router.post("/user/", response_model=schemas.UserBase)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db_user = repository.get_user_by_email(db, email=user.email)
     if db_user:
@@ -15,7 +15,7 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     return repository.create_user(db=db, user=user)
 
 
-@router.get("/user/{user_id}", response_model=schemas.User)
+@router.get("/user/{user_id}", response_model=schemas.UserBase)
 def get_user(user_id: int, db: Session = Depends(get_db)):
     db_user = repository.get_user(db=db, user_id=user_id)
     if db_user is None:
