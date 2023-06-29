@@ -5,7 +5,7 @@ from starlette.responses import Response
 
 from config import API_PREFIX
 from database import engine, SessionLocal, Base
-from routers.handlers.http_error import http_error_handler
+from routers.handlers.http_error import http_exception_handler
 from routers.user_router import router
 
 
@@ -22,7 +22,7 @@ def get_application() -> FastAPI:
     application.include_router(router, prefix=API_PREFIX)
 
     # Add exception handlers
-    application.add_exception_handler(HTTPException, http_error_handler)
+    application.add_exception_handler(HTTPException, http_exception_handler)
 
     # Allow cors
     # application.add_middleware(

@@ -1,7 +1,10 @@
+from typing import Union
+
 from pydantic import BaseModel
 
 
 class UserBase(BaseModel):
+    user_id: Union[int, None]
     email: str
     first_name: str
     last_name: str
@@ -11,12 +14,12 @@ class UserBase(BaseModel):
 
 
 class UserCreate(UserBase):
-    password_hashed: str
-    password_salt: str
+    password: Union[str, None]
+    password_hashed: Union[str, None]
+    password_salt: Union[str, None]
 
 
 class User(UserBase):
-    user_id: int
-    date_of_birth: str
-    email_confirmation_number: str
-    phone_number: str
+    date_of_birth: Union[str, None]
+    email_confirmation_number: Union[str, None]
+    phone_number: Union[str, None]

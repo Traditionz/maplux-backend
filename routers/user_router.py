@@ -1,4 +1,6 @@
+import bcrypt
 from fastapi import APIRouter, Depends, HTTPException
+from snowflake import SnowflakeGenerator
 from sqlalchemy.orm import Session
 
 from dependencies import get_db
@@ -12,6 +14,10 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db_user = repository.get_user_by_email(db, email=user.email)
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
+    id_generator = SnowflakeGenerator(42)
+    user.user_id = next(id_generator)
+    user.password_salt = bcrypt.gensalt(12)
+    user.password_hashed = bcrypt.hashpw(user.password.encode("utf-8"), user.password_salt)
     return repository.create_user(db=db, user=user)
 
 
