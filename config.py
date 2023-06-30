@@ -1,3 +1,5 @@
-API_PREFIX = "/api"
+API_PREFIX = "/auth"
 
 JWT_TOKEN_PREFIX = "Authorization"
+SECRET_KEY = "SECRET"
+ALGORITHM = "HS256"

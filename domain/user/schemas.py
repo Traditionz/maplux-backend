@@ -5,9 +5,9 @@ from pydantic import BaseModel
 
 class UserBase(BaseModel):
     user_id: Union[int, None]
-    email: str
-    first_name: str
-    last_name: str
+    email: Union[str, None]
+    first_name: Union[str, None]
+    last_name: Union[str, None]
 
     class Config:
         orm_mode = True

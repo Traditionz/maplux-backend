@@ -5,8 +5,8 @@ from starlette.responses import Response
 
 from config import API_PREFIX
 from database import engine, SessionLocal, Base
+from routers.api import router
 from routers.handlers.http_error import http_exception_handler
-from routers.user_router import router
 
 
 def get_application() -> FastAPI:
@@ -63,6 +63,8 @@ async def db_session_middleware(request: Request, call_next):
         request.state.db.close()
     return response
 
+
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="localhost", port=8000)
