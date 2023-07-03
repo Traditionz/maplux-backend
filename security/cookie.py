@@ -5,7 +5,7 @@ from fastapi.security import OAuth2
 from fastapi.security.utils import get_authorization_scheme_param
 from starlette.exceptions import HTTPException
 from starlette.requests import Request
-from starlette.status import HTTP_403_FORBIDDEN
+from starlette.status import HTTP_401_UNAUTHORIZED
 
 
 class OAuth2PasswordBearerCookie(OAuth2):
@@ -22,36 +22,15 @@ class OAuth2PasswordBearerCookie(OAuth2):
         super().__init__(flows=flows, scheme_name=scheme_name, auto_error=auto_error)
 
     async def __call__(self, request: Request) -> Optional[str]:
-        header_authorization: str = request.headers.get("Authorization")
-        cookie_authorization: str = request.cookies.get("Authorization")
+        authorization: str = request.cookies.get("access_token")
 
-        header_scheme, header_param = get_authorization_scheme_param(
-            header_authorization
-        )
-        cookie_scheme, cookie_param = get_authorization_scheme_param(
-            cookie_authorization
-        )
-
-        scheme = None
-        param = None
-
-        if header_scheme.lower() == "bearer":
-            authorization = True
-            scheme = header_scheme
-            param = header_param
-
-        elif cookie_scheme.lower() == "bearer":
-            authorization = True
-            scheme = cookie_scheme
-            param = cookie_param
-
-        else:
-            authorization = False
-
+        scheme, param = get_authorization_scheme_param(authorization)
         if not authorization or scheme.lower() != "bearer":
             if self.auto_error:
                 raise HTTPException(
-                    status_code=HTTP_403_FORBIDDEN, detail="Not authenticated"
+                    status_code=HTTP_401_UNAUTHORIZED,
+                    detail="Not authenticated",
+                    headers={"WWW-Authenticate": "Bearer"},
                 )
             else:
                 return None

@@ -7,10 +7,11 @@ from fastapi.security import OAuth2PasswordRequestForm
 from snowflake import SnowflakeGenerator
 from sqlalchemy.orm import Session
 from starlette import status
-from starlette.responses import RedirectResponse
+from starlette.responses import RedirectResponse, Response, JSONResponse
 
 from database import get_db
 from domain import user
+from domain.token.schemas import Token
 from domain.user import repository
 from domain.user.schemas import UserBase, UserCreate, User
 from security.authentication import create_access_token, authenticate_user, get_current_active_user
@@ -38,34 +39,16 @@ async def get_user(user_id: int, db: Session = Depends(get_db)):
     return db_user
 
 
-# @router.post('/user/login2', response_model=Token)
-# async def login_user(data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-#     db_user = authenticate_user(db, data.username, data.password)
-#
-#     if db_user is None:
-#         raise HTTPException(status_code=401, detail="Incorrect username or password.")
-#
-#     access_token = create_access_token(data=dict(sub=data.username), expires=timedelta(days=365))
-#
-#     return {'access_token': access_token, 'token_type': 'bearer'}
-
-
-@router.post('/user/login')
-async def login_user2(form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    db_user = authenticate_user(db, form.username, form.password)
+@router.post('/user/login', response_model=Token)
+async def login_user(data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    db_user = authenticate_user(db, data.username, data.password)
 
     if db_user is None:
         raise HTTPException(status_code=401, detail="Incorrect username or password.")
 
-    access_token = create_access_token(data=dict(sub=form.username), expires=timedelta(days=365))
+    access_token = create_access_token(data=dict(sub=data.username), expires=timedelta(days=365))
 
-    response = RedirectResponse(url="/auth/home", status_code=status.HTTP_302_FOUND)
-    response.set_cookie(
-        key="access_token",
-        value=f"Bearer {access_token}",
-        httponly=True,
-    )
-    return response
+    return {'access_token': access_token, 'token_type': 'bearer'}
 
 
 @router.get('/user/me/', response_model=User)
