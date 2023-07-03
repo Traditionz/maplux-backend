@@ -74,5 +74,5 @@ async def read_user_me(current_user: User = Depends(get_current_active_user)):
 
 
 @router.get('/home')
-async def home(current_user: User = Depends(get_current_active_user)):
+async def home():
     return ["Hello"]
