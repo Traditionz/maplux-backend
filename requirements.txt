@@ -11,6 +11,7 @@ uvicorn~=0.22.0
 python-dotenv
 
 # Credentials
+fastapi-users
 snowflake-id
 bcrypt~=4.0.1
 python-multipart
