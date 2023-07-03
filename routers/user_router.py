@@ -68,7 +68,7 @@ async def login_user2(form: OAuth2PasswordRequestForm = Depends(), db: Session =
     return response
 
 
-@router.get('/user/me', response_model=User)
+@router.get('/user/me/', response_model=User)
 async def read_user_me(current_user: User = Depends(get_current_active_user)):
     return current_user
 
