@@ -10,7 +10,6 @@ def get_user_status(db: Session, user_id: int):
 def create_user_status(db: Session, user_id: int):
     db_user_status = models.UserStatus(
         user_id=user_id,
-        is_verified=False,
         is_active=False,
         is_banned=False
     )
