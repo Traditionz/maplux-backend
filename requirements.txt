@@ -8,7 +8,7 @@ starlette==0.28.0
 
 # Env and startup
 uvicorn~=0.22.0
-python-dotenv
+python-dotenv~=1.0.0
 
 # Credentials
 fastapi-users
@@ -16,3 +16,10 @@ snowflake-id
 bcrypt~=4.0.1
 python-multipart
 PyJWT~=2.7.0
+itsdangerous==2.1.2
+
+# Html
+Jinja2~=3.1.2
+
+# Email
+Fastapi-mail

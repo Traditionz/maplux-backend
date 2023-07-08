@@ -8,7 +8,6 @@ class UserStatus(Base):
     __tablename__ = "user_status"
 
     user_id: Mapped[int] = Column(Integer, ForeignKey("user.user_id"), primary_key=True)
-    is_verified = Column(Boolean)
     is_active = Column(Boolean)
     is_banned = Column(Boolean)
 

@@ -1,5 +1,24 @@
-API_PREFIX = "/auth"
+from pydantic import BaseSettings, EmailStr
 
-JWT_TOKEN_PREFIX = "Authorization"
-SECRET_KEY = "SECRET"
-ALGORITHM = "HS256"
+
+class EnvVars(BaseSettings):
+    CLIENT_ORIGIN: str
+
+    API_PREFIX: str
+
+    DATABASE_URL: str
+
+    JWT_SECRET_KEY: str
+    JWT_ALGORITHM: str
+
+    EMAIL_USERNAME: str
+    EMAIL_PASSWORD: str
+    EMAIL_FROM: EmailStr
+    EMAIL_PORT: int
+    EMAIL_SERVER: str
+
+    class Config:
+        env_file = './.env'
+
+
+env_vars = EnvVars()

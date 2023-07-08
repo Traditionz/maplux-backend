@@ -6,17 +6,20 @@ import jwt
 from fastapi import Depends
 from fastapi.security.base import SecurityBase
 from fastapi.security.utils import get_authorization_scheme_param
+from itsdangerous import URLSafeTimedSerializer
 from sqlalchemy.orm import Session
 from starlette.exceptions import HTTPException
 from starlette.requests import Request
-from starlette.status import HTTP_403_FORBIDDEN
+from starlette.status import HTTP_401_UNAUTHORIZED
 
-from config import SECRET_KEY, ALGORITHM
+from config import env_vars
 from database import get_db
 from domain import user
 from domain.token.schemas import TokenData
 from domain.user import repository
 from domain.user.models import User
+from domain.user.schemas import UserCreate
+from exception.UserExceptions import InvalidActivationTokenException
 from security.cookie import OAuth2PasswordBearerCookie
 
 oauth2_scheme = OAuth2PasswordBearerCookie(tokenUrl="/auth/user/login/")
@@ -33,7 +36,7 @@ class BasicAuth(SecurityBase):
         if not authorization or scheme.lower() != "basic":
             if self.auto_error:
                 raise HTTPException(
-                    status_code=HTTP_403_FORBIDDEN, detail="Not authenticated"
+                    status_code=HTTP_401_UNAUTHORIZED, detail="Unauthorized."
                 )
             else:
                 return None
@@ -49,6 +52,22 @@ def get_hashed_password(password: bytes, password_salt: bytes) -> bytes:
 
 def check_password(password: bytes, password_hashed: bytes) -> bool:
     return bcrypt.checkpw(password, password_hashed)
+
+
+def generate_activation_token(new_user: UserCreate) -> str:
+    serializer = URLSafeTimedSerializer(env_vars.JWT_SECRET_KEY)
+    return serializer.dumps(new_user.email, salt=new_user.password_salt)
+
+
+def confirm_activation_token(salt: str, token, expiration=3600) -> str:
+    try:
+        serializer = URLSafeTimedSerializer(env_vars.JWT_SECRET_KEY)
+        email = serializer.loads(
+            token, salt=salt, max_age=expiration
+        )
+        return email
+    except Exception:
+        raise InvalidActivationTokenException("Token is expired or invalid.")
 
 
 def authenticate_user(db, email, password) -> Union[Type[User], None]:
@@ -67,12 +86,12 @@ def create_access_token(data: dict, expires: Union[timedelta, None] = None) -> s
     else:
         expire = datetime.utcnow() + timedelta(minutes=15)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, env_vars.JWT_SECRET_KEY, algorithm=env_vars.JWT_ALGORITHM)
     return encoded_jwt
 
 
 async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> Type[User]:
-    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    payload = jwt.decode(token, env_vars.JWT_SECRET_KEY, algorithms=[env_vars.JWT_ALGORITHM])
     email: str = payload.get('sub')
     if email is None:
         raise HTTPException(status_code=401, detail="Incorrect email or password.")
