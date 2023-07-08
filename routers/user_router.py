@@ -13,8 +13,8 @@ from database import get_db
 from domain import user, user_status
 from domain.token.schemas import Token
 from domain.user import repository
-from domain.user_status import repository
 from domain.user.schemas import UserBase, UserCreate, User
+from domain.user_status import repository
 from exception.UserExceptions import SendActivationEmailException
 from security.authentication import create_access_token, authenticate_user, get_current_active_user, BasicAuth, \
     basic_auth, generate_activation_token

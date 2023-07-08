@@ -1,5 +1,4 @@
 import os
-import traceback
 from typing import List
 
 from fastapi_mail import ConnectionConfig, FastMail, MessageSchema, MessageType
@@ -9,6 +8,7 @@ from pydantic.main import BaseModel
 
 from config import env_vars
 from domain.user.schemas import UserBase
+from exception.UserExceptions import SendActivationEmailException
 
 env = Environment(
     loader=FileSystemLoader(f'{os.path.dirname(__file__)}/../templates/'),
@@ -60,10 +60,8 @@ class Email:
         await fm.send_message(msg)
 
     async def send_activation_email(self):
-        #try:
-        await self.send_email('Activate your Maplux account', 'email_activation')
+        try:
+            await self.send_email('Activate your Maplux account', 'email_activation')
+        except Exception:
 
-        traceback.print_exc()
-        #except Exception as e:
-
-            #raise SendActivationEmailException('Error sending activation email.')
+            raise SendActivationEmailException('Error sending activation email.')

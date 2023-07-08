@@ -1,8 +1,6 @@
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
-from starlette.datastructures import URL
 from starlette.middleware.cors import CORSMiddleware
-from starlette.requests import Request
 
 from config import env_vars
 from database import Base, engine
