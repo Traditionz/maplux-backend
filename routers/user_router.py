@@ -15,9 +15,9 @@ from domain.token.schemas import Token
 from domain.user import repository
 from domain.user.schemas import UserBase, UserCreate, User
 from domain.user_status import repository
-from exception.UserExceptions import SendActivationEmailException
+from exception.UserExceptions import SendActivationEmailException, InvalidActivationTokenException
 from security.authentication import create_access_token, authenticate_user, get_current_active_user, BasicAuth, \
-    basic_auth, generate_activation_token
+    basic_auth, generate_activation_token, confirm_activation_token
 from utils.email_utils import Email
 
 router = APIRouter()
@@ -47,6 +47,32 @@ async def create_user(new_user: UserCreate, request: Request, db: Session = Depe
                             detail='Error sending activation email.')
 
     return {'status': 'success', 'message': 'Activation token successfully sent to your email'}
+
+
+@router.get('/user/activate/{token}')
+async def activate_user(token: str, db: Session = Depends(get_db)):
+    try:
+        email = confirm_activation_token(token)
+        current_user = user.repository.get_user_by_email(db=db, email=email)
+        if current_user is None:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                                detail='Invalid activation token.')
+        current_user_status = user_status.repository.get_user_status(db=db, user_id=current_user.user_id)
+        if current_user_status is None:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                                detail='User statuses not found.')
+        current_user_status.is_active = True
+        user_status.repository.set_user_status(db=db, new_user_status=current_user_status)
+        return {
+            "status": "success",
+            "message": "Account verified successfully"
+        }
+    except InvalidActivationTokenException:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail='Token is expired or invalid.')
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail='Could not activate user.')
 
 
 @router.get('/user/{user_id}', response_model=UserBase)

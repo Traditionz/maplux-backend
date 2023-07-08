@@ -55,15 +55,15 @@ def check_password(password: bytes, password_hashed: bytes) -> bool:
 
 
 def generate_activation_token(new_user: UserCreate) -> str:
-    serializer = URLSafeTimedSerializer(env_vars.JWT_SECRET_KEY)
-    return serializer.dumps(new_user.email, salt=new_user.password_salt)
+    serializer = URLSafeTimedSerializer(env_vars.ACTIVATE_SECRET_KEY)
+    return serializer.dumps(new_user.email, salt=env_vars.ACTIVATE_SALT)
 
 
-def confirm_activation_token(salt: str, token, expiration=3600) -> str:
+def confirm_activation_token(token: str, expiration: int = 3600) -> str:
     try:
-        serializer = URLSafeTimedSerializer(env_vars.JWT_SECRET_KEY)
+        serializer = URLSafeTimedSerializer(env_vars.ACTIVATE_SECRET_KEY)
         email = serializer.loads(
-            token, salt=salt, max_age=expiration
+            token, salt=env_vars.ACTIVATE_SALT, max_age=expiration
         )
         return email
     except Exception:

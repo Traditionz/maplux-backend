@@ -8,6 +8,9 @@ class EnvVars(BaseSettings):
 
     DATABASE_URL: str
 
+    ACTIVATE_SECRET_KEY: str
+    ACTIVATE_SALT: str
+
     JWT_SECRET_KEY: str
     JWT_ALGORITHM: str
 
