@@ -102,7 +102,11 @@ async def login_user(auth: BasicAuth = Depends(basic_auth), db: Session = Depend
     # return {'access_token': access_token, 'token_type': 'bearer'}
 
     response = Response()
-    response.set_cookie(key='access_token', value=f'Bearer {access_token}', httponly=True)
+    response.set_cookie(
+        key='Authorization',
+        value=f'Bearer {access_token}',
+        httponly=True
+    )
     return response
 
 
