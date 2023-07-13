@@ -105,4 +105,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
 
 
 async def get_current_active_user(current_user: User = Depends(get_current_user)) -> User:
+    # TODO: Redirect to "Confirm Email address page" if user's account is not activated.
     return current_user
+
+# TODO: Check banned user.

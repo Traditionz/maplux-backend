@@ -63,6 +63,7 @@ async def activate_user(token: str, db: Session = Depends(get_db)):
                                 detail='User statuses not found.')
         current_user_status.is_active = True
         user_status.repository.set_user_status(db=db, new_user_status=current_user_status)
+        # TODO: Redirect to Address Form
         return {
             "status": "success",
             "message": "Account verified successfully"
@@ -98,8 +99,6 @@ async def login_user(auth: BasicAuth = Depends(basic_auth), db: Session = Depend
         raise HTTPException(status_code=401, detail='Incorrect username or password.')
 
     access_token = create_access_token(data=dict(sub=username), expires=timedelta(days=365))
-
-    # return {'access_token': access_token, 'token_type': 'bearer'}
 
     response = Response()
     response.set_cookie(
