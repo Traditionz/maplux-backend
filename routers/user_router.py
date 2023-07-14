@@ -106,23 +106,17 @@ async def login_user(auth: BasicAuth = Depends(basic_auth), db: Session = Depend
     return response
 
 
-@router.get('/user/suspend/temporary/{user_id}')
-async def suspend_user(user_id: int, db: Session = Depends(get_db)):
-    db_user = user.repository.get_user(db=db, user_id=user_id)
-    if db_user is None:
-        raise HTTPException(status_code=404, detail='User not found.')
-    user_suspension.repository.create_user_suspension_short(db=db, user_id=user_id)
-    return {
-        "status": "success",
-        "message": f"{user_id} has been suspended for 5 days."
-    }
-
-
 @router.get('/user/logout/')
-async def login_user():
+async def logout_user():
     response = RedirectResponse(url='/')
-    response.delete_cookie("access_token")
+    response.delete_cookie("Authorization")
     return response
+
+
+# TODO: You're almost done page, needs db table setup
+@router.post('/user/info/new/', response_model=Token)
+async def create_new_user_info(current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
+    return
 
 
 @router.get('/user/me/', response_model=User)
@@ -133,3 +127,15 @@ async def read_user_me(current_user: User = Depends(get_current_active_user)):
 @router.get('/home')
 async def home():
     return ["Hello"]
+
+
+@router.get('/user/suspend/temporary/{user_id}')
+async def suspend_user(user_id: int, db: Session = Depends(get_db)):
+    db_user = user.repository.get_user(db=db, user_id=user_id)
+    if db_user is None:
+        raise HTTPException(status_code=404, detail='User not found.')
+    user_suspension.repository.create_user_suspension_short(db=db, user_id=user_id)
+    return {
+        "status": "success",
+        "message": f"{user_id} has been suspended for 5 days."
+    }
