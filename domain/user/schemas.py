@@ -6,8 +6,10 @@ from pydantic import BaseModel
 class UserBase(BaseModel):
     user_id: Union[int, None]
     email: Union[str, None]
+    activated: Union[bool, None]
     first_name: Union[str, None]
     last_name: Union[str, None]
+    date_of_birth: Union[str, None]
 
     class Config:
         orm_mode = True
@@ -20,6 +22,4 @@ class UserCreate(UserBase):
 
 
 class User(UserBase):
-    date_of_birth: Union[str, None]
-    email_confirmation_number: Union[str, None]
     phone_number: Union[str, None]

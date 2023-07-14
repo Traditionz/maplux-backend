@@ -18,6 +18,15 @@ def get_users(db: Session, skip: int = 0, limit: int = 100) -> list[Type[User]]:
     return db.query(models.User).offset(skip).limit(limit).all()
 
 
+def set_user_activated(db: Session, user_update: [User]) -> Union[Type[User], None]:
+    db_user = db.query(models.User).\
+        filter(models.User.user_id == user_update.user_id).first()
+    setattr(db_user, "activated", user_update.activated)
+    db.commit()
+    db.refresh(db_user)
+    return user_update
+
+
 def create_user(db: Session, user: schemas.UserCreate) -> User:
     db_user = models.User(
         user_id=user.user_id,
@@ -29,5 +38,4 @@ def create_user(db: Session, user: schemas.UserCreate) -> User:
     )
     db.add(db_user)
     db.commit()
-    db.refresh(db_user)
     return db_user

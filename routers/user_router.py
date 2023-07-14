@@ -10,11 +10,11 @@ from starlette import status
 from starlette.responses import RedirectResponse, Response
 
 from database import get_db
-from domain import user, user_status
+from domain import user, user_suspension
 from domain.token.schemas import Token
 from domain.user import repository
 from domain.user.schemas import UserBase, UserCreate, User
-from domain.user_status import repository
+from domain.user_suspension import repository
 from exception.UserExceptions import SendActivationEmailException, InvalidActivationTokenException
 from security.authentication import create_access_token, authenticate_user, get_current_active_user, BasicAuth, \
     basic_auth, generate_activation_token, confirm_activation_token
@@ -30,11 +30,11 @@ async def create_user(new_user: UserCreate, request: Request, db: Session = Depe
         raise HTTPException(status_code=400, detail='Email already registered.')
     id_generator = SnowflakeGenerator(42)
     new_user.user_id = next(id_generator)
+    new_user.activated = False
     new_user.password_salt = bcrypt.gensalt(12)
     new_user.password_hashed = bcrypt.hashpw(new_user.password.encode('utf-8'), new_user.password_salt)
     try:
         user.repository.create_user(db=db, user=new_user)
-        user_status.repository.create_user_status(db=db, user_id=new_user.user_id)
     except Exception:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail='Error creating user. Please try again later.')
@@ -57,13 +57,10 @@ async def activate_user(token: str, db: Session = Depends(get_db)):
         if current_user is None:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                                 detail='Invalid activation token.')
-        current_user_status = user_status.repository.get_user_status(db=db, user_id=current_user.user_id)
-        if current_user_status is None:
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                                detail='User statuses not found.')
-        current_user_status.is_active = True
-        user_status.repository.set_user_status(db=db, new_user_status=current_user_status)
-        # TODO: Redirect to Address Form
+        current_user.activated = True
+        current_user = user.repository.set_user_activated(db=db, user_update=current_user)
+        if not current_user.activated:
+            raise Exception
         return {
             "status": "success",
             "message": "Account verified successfully"
@@ -78,7 +75,7 @@ async def activate_user(token: str, db: Session = Depends(get_db)):
 
 @router.get('/user/{user_id}', response_model=UserBase)
 async def get_user(user_id: int, db: Session = Depends(get_db)):
-    db_user = repository.get_user(db=db, user_id=user_id)
+    db_user = user.repository.get_user(db=db, user_id=user_id)
     if db_user is None:
         raise HTTPException(status_code=404, detail='User not found.')
     return db_user
@@ -107,6 +104,18 @@ async def login_user(auth: BasicAuth = Depends(basic_auth), db: Session = Depend
         httponly=True
     )
     return response
+
+
+@router.get('/user/suspend/temporary/{user_id}')
+async def suspend_user(user_id: int, db: Session = Depends(get_db)):
+    db_user = user.repository.get_user(db=db, user_id=user_id)
+    if db_user is None:
+        raise HTTPException(status_code=404, detail='User not found.')
+    user_suspension.repository.create_user_suspension_short(db=db, user_id=user_id)
+    return {
+        "status": "success",
+        "message": f"{user_id} has been suspended for 5 days."
+    }
 
 
 @router.get('/user/logout/')

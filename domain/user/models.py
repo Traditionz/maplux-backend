@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, Boolean
 from sqlalchemy.orm import relationship
 
 from database import Base
@@ -9,6 +9,7 @@ class User(Base):
 
     user_id = Column(Integer, primary_key=True)
     email = Column(String, unique=True)
+    activated = Column(Boolean)
     password_hashed = Column(String)
     password_salt = Column(String)
     first_name = Column(String)
@@ -17,4 +18,4 @@ class User(Base):
     email_confirmation_token = Column(String)
     phone_number = Column(String)
 
-    user_status = relationship("UserStatus", back_populates="user", uselist=False)
+    user_suspension = relationship("UserSuspension", back_populates="user", uselist=False)
