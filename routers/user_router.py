@@ -108,8 +108,8 @@ async def login_user(auth: BasicAuth = Depends(basic_auth), db: Session = Depend
 
 @router.get('/user/logout/')
 async def logout_user():
-    response = RedirectResponse(url='/')
-    response.delete_cookie("Authorization")
+    response = Response()
+    response.delete_cookie('Authorization')
     return response
 
 
