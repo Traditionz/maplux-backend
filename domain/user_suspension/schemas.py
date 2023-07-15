@@ -1,10 +1,10 @@
 from pydantic import BaseModel
-from sqlalchemy import DateTime
+from pydantic.schema import datetime
 
 
 class UserSuspensionBase(BaseModel):
     user_id: int
-    release_date: DateTime
+    release_date: datetime
 
     class Config:
         orm_mode = True

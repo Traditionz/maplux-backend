@@ -3,18 +3,21 @@ from datetime import timedelta
 
 import bcrypt
 from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import EmailStr
 from snowflake import SnowflakeGenerator
 from sqlalchemy.orm import Session
 from starlette import status
-from starlette.responses import RedirectResponse, Response
+from starlette.responses import Response
 
 from database import get_db
-from domain import user, user_suspension
+from domain import user, user_suspension, address
+from domain.address.schemas import AddressCreate
 from domain.token.schemas import Token
 from domain.user import repository
 from domain.user.schemas import UserBase, UserCreate, User
 from domain.user_suspension import repository
+from domain.address import repository
 from exception.UserExceptions import SendActivationEmailException, InvalidActivationTokenException
 from security.authentication import create_access_token, authenticate_user, get_current_active_user, BasicAuth, \
     basic_auth, generate_activation_token, confirm_activation_token
@@ -28,6 +31,7 @@ async def create_user(new_user: UserCreate, request: Request, db: Session = Depe
     db_user = user.repository.get_user_by_email(db=db, email=new_user.email)
     if db_user:
         raise HTTPException(status_code=400, detail='Email already registered.')
+    # TODO: DoB
     id_generator = SnowflakeGenerator(42)
     new_user.user_id = next(id_generator)
     new_user.activated = False
@@ -58,9 +62,10 @@ async def activate_user(token: str, db: Session = Depends(get_db)):
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                                 detail='Invalid activation token.')
         current_user.activated = True
-        current_user = user.repository.set_user_activated(db=db, user_update=current_user)
+        current_user = user.repository.update_user_activate(db=db, user_update=current_user)
         if not current_user.activated:
             raise Exception
+        # TODO: redirect to You're almost done page if address is empty.
         return {
             "status": "success",
             "message": "Account verified successfully"
@@ -81,7 +86,18 @@ async def get_user(user_id: int, db: Session = Depends(get_db)):
     return db_user
 
 
-@router.get('/user/login/', response_model=Token)
+@router.post("/token/", response_model=Token)
+async def route_login_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    db_user = authenticate_user(db=db, email=form_data.username, password=form_data.password)
+    if not user:
+        raise HTTPException(status_code=400, detail="Incorrect username or password")
+    access_token = create_access_token(
+        data=dict(sub=db_user.email), expires=timedelta(days=365)
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
+
+@router.get('/user/login/')
 async def login_user(auth: BasicAuth = Depends(basic_auth), db: Session = Depends(get_db)):
     if not auth:
         response = Response(headers={"WWW-Authenticate": "Basic"}, status_code=401)
@@ -113,11 +129,19 @@ async def logout_user():
     return response
 
 
-# TODO: You're almost done page, needs db table setup
-@router.post('/user/info/new/', response_model=Token)
-async def create_new_user_info(current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
-    return
+@router.post('/user/address/create/')
+async def create_new_user_address(new_address: AddressCreate,
+                                  current_user: User = Depends(get_current_active_user),
+                                  db: Session = Depends(get_db)):
+    new_address.user_id = current_user.user_id
+    address.repository.create_address(db=db, address=new_address)
+    return {
+        "status": "success",
+        "message": f"{current_user.user_id} has created their address"
+    }
 
+
+# TODO: Create user image
 
 @router.get('/user/me/', response_model=User)
 async def read_user_me(current_user: User = Depends(get_current_active_user)):
@@ -130,7 +154,7 @@ async def home():
 
 
 @router.get('/user/suspend/temporary/{user_id}')
-async def suspend_user(user_id: int, db: Session = Depends(get_db)):
+async def suspend_user_temporary(user_id: int, db: Session = Depends(get_db)):
     db_user = user.repository.get_user(db=db, user_id=user_id)
     if db_user is None:
         raise HTTPException(status_code=404, detail='User not found.')

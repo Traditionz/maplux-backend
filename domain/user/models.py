@@ -19,3 +19,4 @@ class User(Base):
     phone_number = Column(String)
 
     user_suspension = relationship("UserSuspension", back_populates="user", uselist=False)
+    address = relationship("Address", back_populates="user", uselist=False)
