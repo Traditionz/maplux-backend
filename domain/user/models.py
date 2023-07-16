@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy import Column, Integer, String, Boolean, Date
 from sqlalchemy.orm import relationship
 
 from database import Base
@@ -14,7 +14,7 @@ class User(Base):
     password_salt = Column(String)
     first_name = Column(String)
     last_name = Column(String)
-    date_of_birth = Column(String)
+    date_of_birth = Column(Date)
     email_confirmation_token = Column(String)
     phone_number = Column(String)
 

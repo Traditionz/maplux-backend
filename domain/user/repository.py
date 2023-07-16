@@ -31,10 +31,12 @@ def create_user(db: Session, user: schemas.UserCreate) -> User:
     db_user = models.User(
         user_id=user.user_id,
         email=user.email,
+        activated=user.activated,
         first_name=user.first_name,
         last_name=user.last_name,
         password_hashed=user.password_hashed,
-        password_salt=user.password_salt
+        password_salt=user.password_salt,
+        date_of_birth=user.date_of_birth
     )
     db.add(db_user)
     db.commit()

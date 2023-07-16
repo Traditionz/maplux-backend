@@ -31,7 +31,6 @@ async def create_user(new_user: UserCreate, request: Request, db: Session = Depe
     db_user = user.repository.get_user_by_email(db=db, email=new_user.email)
     if db_user:
         raise HTTPException(status_code=400, detail='Email already registered.')
-    # TODO: DoB
     id_generator = SnowflakeGenerator(42)
     new_user.user_id = next(id_generator)
     new_user.activated = False
@@ -56,6 +55,7 @@ async def create_user(new_user: UserCreate, request: Request, db: Session = Depe
 @router.get('/user/activate/{token}')
 async def activate_user(token: str, db: Session = Depends(get_db)):
     try:
+        # TODO: expire old activation email (store in db)
         email = confirm_activation_token(token)
         current_user = user.repository.get_user_by_email(db=db, email=email)
         if current_user is None:

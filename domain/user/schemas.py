@@ -1,6 +1,7 @@
 from typing import Union
 
 from pydantic import BaseModel
+from pydantic.schema import date
 
 
 class UserBase(BaseModel):
@@ -9,7 +10,7 @@ class UserBase(BaseModel):
     activated: Union[bool, None]
     first_name: Union[str, None]
     last_name: Union[str, None]
-    date_of_birth: Union[str, None]
+    date_of_birth: Union[date, None]
 
     class Config:
         orm_mode = True
