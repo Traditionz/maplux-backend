@@ -11,13 +11,16 @@ from starlette import status
 from starlette.responses import Response
 
 from database import get_db
-from domain import user, user_suspension, address
+from domain import user, user_suspension, address, user_image
 from domain.address.schemas import AddressCreate
 from domain.token.schemas import Token
-from domain.user import repository
 from domain.user.schemas import UserBase, UserCreate, User
+from domain.user_image.schemas import UserImageBase
+from domain.user import repository
 from domain.user_suspension import repository
 from domain.address import repository
+from domain.user_image import repository
+
 from exception.UserExceptions import SendActivationEmailException, InvalidActivationTokenException
 from security.authentication import create_access_token, authenticate_user, get_current_active_user, BasicAuth, \
     basic_auth, generate_activation_token, confirm_activation_token
@@ -30,7 +33,7 @@ router = APIRouter()
 async def create_user(new_user: UserCreate, request: Request, db: Session = Depends(get_db)):
     db_user = user.repository.get_user_by_email(db=db, email=new_user.email)
     if db_user:
-        raise HTTPException(status_code=400, detail='Email already registered.')
+        raise HTTPException(status_code=400, detail="Email already registered.")
     id_generator = SnowflakeGenerator(42)
     new_user.user_id = next(id_generator)
     new_user.activated = False
@@ -40,16 +43,19 @@ async def create_user(new_user: UserCreate, request: Request, db: Session = Depe
         user.repository.create_user(db=db, user=new_user)
     except Exception:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            detail='Error creating user. Please try again later.')
+                            detail="Error creating user. Please try again later.")
     try:
         token = generate_activation_token(new_user=new_user)
         url = f"{request.url.scheme}://{request.url.hostname}:{request.url.port}/auth/user/activate/{token}"
         await Email(new_user, url, [EmailStr(new_user.email)]).send_activation_email()
     except SendActivationEmailException:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            detail='Error sending activation email.')
+                            detail="Error sending activation email.")
 
-    return {'status': 'success', 'message': 'Activation token successfully sent to your email'}
+    return {
+        "status": "success",
+        "message": "Activation token successfully sent to your email"
+    }
 
 
 @router.get('/user/activate/{token}')
@@ -72,18 +78,10 @@ async def activate_user(token: str, db: Session = Depends(get_db)):
         }
     except InvalidActivationTokenException:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            detail='Token is expired or invalid.')
+                            detail="Token is expired or invalid.")
     except Exception:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            detail='Could not activate user.')
-
-
-@router.get('/user/{user_id}', response_model=UserBase)
-async def get_user(user_id: int, db: Session = Depends(get_db)):
-    db_user = user.repository.get_user(db=db, user_id=user_id)
-    if db_user is None:
-        raise HTTPException(status_code=404, detail='User not found.')
-    return db_user
+                            detail="Could not activate user.")
 
 
 @router.post("/token/", response_model=Token)
@@ -94,7 +92,10 @@ async def route_login_access_token(form_data: OAuth2PasswordRequestForm = Depend
     access_token = create_access_token(
         data=dict(sub=db_user.email), expires=timedelta(days=365)
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {
+        "access_token": access_token,
+        "token_type": "bearer"
+    }
 
 
 @router.get('/user/login/')
@@ -109,23 +110,26 @@ async def login_user(auth: BasicAuth = Depends(basic_auth), db: Session = Depend
     db_user = authenticate_user(db, username, password)
 
     if db_user is None:
-        raise HTTPException(status_code=401, detail='Incorrect username or password.')
+        raise HTTPException(status_code=401, detail="Incorrect username or password.")
 
     access_token = create_access_token(data=dict(sub=username), expires=timedelta(days=365))
 
     response = Response()
     response.set_cookie(
-        key='Authorization',
-        value=f'Bearer {access_token}',
+        key="Authorization",
+        value=f"Bearer {access_token}",
         httponly=True
     )
     return response
 
 
+# TODO: separate confirmation tokens (see comment in create user)
+#  to another table and make forget password endpoint
+
 @router.get('/user/logout/')
 async def logout_user():
     response = Response()
-    response.delete_cookie('Authorization')
+    response.delete_cookie("Authorization")
     return response
 
 
@@ -141,7 +145,30 @@ async def create_new_user_address(new_address: AddressCreate,
     }
 
 
-# TODO: Create user image
+# TODO: update address
+
+@router.post('/user/profile/image/create/')
+async def create_new_user_image(new_user_image: UserImageBase,
+                                current_user: User = Depends(get_current_active_user),
+                                db: Session = Depends(get_db)):
+    # TODO: Front end will validate image ext and upload to s3
+    new_user_image.user_id = current_user.user_id
+    user_image.repository.create_user_image(db=db, user_image=new_user_image)
+    return {
+        "status": "success",
+        "message": f"{new_user_image.user_id} has created their user image"
+    }
+
+
+# TODO: update/delete image
+
+@router.get('/user/{user_id}', response_model=UserBase)
+async def get_user(user_id: int, db: Session = Depends(get_db)):
+    db_user = user.repository.get_user(db=db, user_id=user_id)
+    if db_user is None:
+        raise HTTPException(status_code=404, detail="User not found.")
+    return db_user
+
 
 @router.get('/user/me/', response_model=User)
 async def read_user_me(current_user: User = Depends(get_current_active_user)):

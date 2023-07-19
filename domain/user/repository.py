@@ -23,7 +23,6 @@ def update_user_activate(db: Session, user_update: schemas.User) -> User:
         filter(models.User.user_id == user_update.user_id).first()
     setattr(db_user, "activated", user_update.activated)
     db.commit()
-    db.refresh(db_user)
     return user_update
 
 
