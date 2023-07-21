@@ -12,10 +12,10 @@ from starlette.responses import Response
 
 from database import get_db
 from domain import user, user_suspension, address, user_image
-from domain.address.schemas import AddressCreate
+from domain.address.schemas import AddressCreate, Address
 from domain.token.schemas import Token
 from domain.user.schemas import UserBase, UserCreate, User
-from domain.user_image.schemas import UserImageBase
+from domain.user_image.schemas import UserImageBase, UserImageCreate, UserImage
 from domain.user import repository
 from domain.user_suspension import repository
 from domain.address import repository
@@ -145,10 +145,20 @@ async def create_new_user_address(new_address: AddressCreate,
     }
 
 
-# TODO: update address
+@router.put('/user/address/update/')
+async def update_new_user_address(new_address: Address,
+                                  current_user: User = Depends(get_current_active_user),
+                                  db: Session = Depends(get_db)):
+    new_address.user_id = current_user.user_id
+    address.repository.update_address(db=db, address=new_address)
+    return {
+        "status": "success",
+        "message": f"{current_user.user_id} has created their address"
+    }
+
 
 @router.post('/user/profile/image/create/')
-async def create_new_user_image(new_user_image: UserImageBase,
+async def create_new_user_image(new_user_image: UserImageCreate,
                                 current_user: User = Depends(get_current_active_user),
                                 db: Session = Depends(get_db)):
     # TODO: Front end will validate image ext and upload to s3
@@ -160,7 +170,17 @@ async def create_new_user_image(new_user_image: UserImageBase,
     }
 
 
-# TODO: update/delete image
+@router.put('/user/profile/image/update/', response_model=UserImageBase)
+async def update_user_image(user_image_update: UserImage,
+                            current_user: User = Depends(get_current_active_user),
+                            db: Session = Depends(get_db)):
+    user_image_update.user_id = current_user.user_id
+    user_image.repository.update_user_image(db=db, user_image=user_image_update)
+    return {
+        "status": "success",
+        "message": f"{user_image_update.user_id} has updated their user image"
+    }
+
 
 @router.get('/user/{user_id}', response_model=UserBase)
 async def get_user(user_id: int, db: Session = Depends(get_db)):

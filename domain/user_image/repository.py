@@ -1,10 +1,13 @@
+from typing import Type, Union
+
 from sqlalchemy.orm import Session
 
 from . import models, schemas
 from .models import UserImage
+from .schemas import UserImageCreate
 
 
-def create_user_image(db: Session, user_image: schemas.UserImageBase) -> UserImage:
+def create_user_image(db: Session, user_image: schemas.UserImageCreate) -> UserImage:
     db_user_image = models.UserImage(
         user_id=user_image.user_id,
         image_ext=user_image.image_ext
@@ -14,9 +17,9 @@ def create_user_image(db: Session, user_image: schemas.UserImageBase) -> UserIma
     return db_user_image
 
 
-def update_user_image(db: Session, user_image: schemas.UserImage) -> UserImage:
+def update_user_image(db: Session, user_image: schemas.UserImage) -> Union[Type[UserImage], None]:
     db_user_image = db.query(models.UserImage). \
         filter(models.UserImage.user_id == user_image.user_id).first()
     setattr(db_user_image, "image_ext", user_image.image_ext)
     db.commit()
-    return user_image
+    return db_user_image
