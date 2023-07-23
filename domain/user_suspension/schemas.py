@@ -4,7 +4,7 @@ from pydantic.schema import datetime
 
 class UserSuspensionBase(BaseModel):
     user_id: int
-    release_date: datetime
+    expiration_date: datetime
 
     class Config:
         orm_mode = True

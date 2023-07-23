@@ -13,7 +13,7 @@ from starlette.responses import Response
 from database import get_db
 from domain import user, user_suspension, address, user_image
 from domain.address.schemas import AddressCreate, Address
-from domain.token.schemas import Token
+from domain.auth_token.schemas import Token
 from domain.user.schemas import UserBase, UserCreate, User
 from domain.user_image.schemas import UserImageBase, UserImageCreate, UserImage
 from domain.user import repository
@@ -54,11 +54,11 @@ async def create_user(new_user: UserCreate, request: Request, db: Session = Depe
 
     return {
         "status": "success",
-        "message": "Activation token successfully sent to your email"
+        "message": "Activation auth_token successfully sent to your email"
     }
 
 
-@router.get('/user/activate/{token}')
+@router.get('/user/activate/{auth_token}')
 async def activate_user(token: str, db: Session = Depends(get_db)):
     try:
         # TODO: expire old activation email (store in db)
@@ -66,7 +66,7 @@ async def activate_user(token: str, db: Session = Depends(get_db)):
         current_user = user.repository.get_user_by_email(db=db, email=email)
         if current_user is None:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                                detail='Invalid activation token.')
+                                detail='Invalid activation auth_token.')
         current_user.activated = True
         current_user = user.repository.update_user_activate(db=db, user_update=current_user)
         if not current_user.activated:
@@ -84,7 +84,7 @@ async def activate_user(token: str, db: Session = Depends(get_db)):
                             detail="Could not activate user.")
 
 
-@router.post("/token/", response_model=Token)
+@router.post("/auth_token/", response_model=Token)
 async def route_login_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     db_user = authenticate_user(db=db, email=form_data.username, password=form_data.password)
     if not user:

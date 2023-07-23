@@ -15,8 +15,8 @@ def update_user_suspension(db: Session, user_suspension_update: schemas.UserSusp
         Union[Type[UserSuspension], None]:
     db_user_suspension = db.query(models.UserSuspension).\
         filter(models.UserSuspension.user_id == user_suspension_update.user_id).first()
-    setattr(user_suspension_update, "release_date", user_suspension_update.release_date)
-    db_user_suspension.release_date = user_suspension_update.release_date
+    setattr(user_suspension_update, "expiration_date", user_suspension_update.expiration_date)
+    db_user_suspension.expiration_date = user_suspension_update.expiration_date
     db.add(db_user_suspension)
     db.commit()
     db.refresh(db_user_suspension)

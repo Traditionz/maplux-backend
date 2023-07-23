@@ -15,7 +15,7 @@ from starlette.status import HTTP_401_UNAUTHORIZED
 from config import env_vars
 from database import get_db
 from domain import user
-from domain.token.schemas import TokenData
+from domain.auth_token.schemas import TokenData
 from domain.user import repository
 from domain.user.models import User
 from domain.user.schemas import UserCreate
