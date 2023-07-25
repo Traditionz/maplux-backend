@@ -1,10 +1,8 @@
-from typing import Union
-
 from pydantic import BaseModel
 
 
 class UserImageBase(BaseModel):
-    user_id: Union[int, None]
+    user_id: int | None
     image_ext: str
 
     class Config:

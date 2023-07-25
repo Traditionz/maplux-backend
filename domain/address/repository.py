@@ -1,4 +1,4 @@
-from typing import Union, Type
+from typing import Type
 
 from sqlalchemy.orm import Session
 

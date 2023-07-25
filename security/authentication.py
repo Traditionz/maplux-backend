@@ -1,5 +1,5 @@
 from datetime import timedelta, datetime
-from typing import Union, Optional
+from typing import Optional, Type
 
 import bcrypt
 import jwt
@@ -70,7 +70,7 @@ def confirm_activation_token(token: str, expiration: int = 3600) -> str:
         raise InvalidActivationTokenException("Token is expired or invalid.")
 
 
-def authenticate_user(db, email, password) -> Union[User, None]:
+def authenticate_user(db, email, password) -> Type[User] | None:
     db_user = repository.get_user_by_email(db=db, email=email)
     if db_user is None:
         return None
@@ -79,7 +79,7 @@ def authenticate_user(db, email, password) -> Union[User, None]:
     return db_user
 
 
-def create_access_token(data: dict, expires: Union[timedelta, None] = None) -> str:
+def create_access_token(data: dict, expires: timedelta | None = None) -> str:
     to_encode = data.copy()
     if expires:
         expire = datetime.utcnow() + expires
@@ -90,7 +90,7 @@ def create_access_token(data: dict, expires: Union[timedelta, None] = None) -> s
     return encoded_jwt
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> Union[User, None]:
+async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> Type[User] | None:
     payload = jwt.decode(token, env_vars.JWT_SECRET_KEY, algorithms=[env_vars.JWT_ALGORITHM])
     email: str = payload.get('sub')
     if email is None:

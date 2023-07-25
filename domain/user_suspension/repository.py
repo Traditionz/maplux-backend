@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Type, Union
+from typing import Type
 
 from sqlalchemy.orm import Session
 

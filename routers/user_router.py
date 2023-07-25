@@ -12,15 +12,14 @@ from starlette.responses import Response
 
 from database import get_db
 from domain import user, user_suspension, address, user_image
+from domain.address import repository
 from domain.address.schemas import AddressCreate, Address
 from domain.auth_token.schemas import Token
-from domain.user.schemas import UserBase, UserCreate, User
-from domain.user_image.schemas import UserImageBase, UserImageCreate, UserImage
 from domain.user import repository
-from domain.user_suspension import repository
-from domain.address import repository
+from domain.user.schemas import UserBase, UserCreate, User
 from domain.user_image import repository
-
+from domain.user_image.schemas import UserImageBase, UserImageCreate, UserImage
+from domain.user_suspension import repository
 from exception.UserExceptions import SendActivationEmailException, InvalidActivationTokenException
 from security.authentication import create_access_token, authenticate_user, get_current_active_user, BasicAuth, \
     basic_auth, generate_activation_token, confirm_activation_token
