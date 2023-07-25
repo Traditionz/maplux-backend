@@ -7,19 +7,19 @@ sqlalchemy~=2.0.17
 starlette==0.28.0
 
 # Env and startup
-uvicorn~=0.22.0
+uvicorn==0.23.1
 python-dotenv~=1.0.0
 
 # Credentials
-fastapi-users
-snowflake-id
+fastapi-users==12.1.0
+snowflake-id==0.0.4
 bcrypt~=4.0.1
 python-multipart
-PyJWT~=2.7.0
+PyJWT==2.8.0
 itsdangerous==2.1.2
 
 # Html
 Jinja2~=3.1.2
 
 # Email
-Fastapi-mail
+Fastapi-mail==1.2.0

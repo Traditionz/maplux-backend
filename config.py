@@ -1,4 +1,4 @@
-from pydantic import BaseSettings, EmailStr
+from pydantic import BaseSettings
 
 
 class EnvVars(BaseSettings):
@@ -16,7 +16,7 @@ class EnvVars(BaseSettings):
 
     EMAIL_USERNAME: str
     EMAIL_PASSWORD: str
-    EMAIL_FROM: EmailStr
+    EMAIL_FROM: str
     EMAIL_PORT: int
     EMAIL_SERVER: str
 
