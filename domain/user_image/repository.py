@@ -4,7 +4,6 @@ from sqlalchemy.orm import Session
 
 from . import models, schemas
 from .models import UserImage
-from .schemas import UserImageCreate
 
 
 def create_user_image(db: Session, user_image: schemas.UserImageCreate) -> UserImage:
@@ -17,7 +16,11 @@ def create_user_image(db: Session, user_image: schemas.UserImageCreate) -> UserI
     return db_user_image
 
 
-def update_user_image(db: Session, user_image: schemas.UserImage) -> Union[Type[UserImage], None]:
+def get_user_image(db: Session, user_id: int) -> Type[UserImage] | None:
+    return db.query(models.UserImage).filter(models.UserImage.user_id == user_id).first()
+
+
+def update_user_image(db: Session, user_image: schemas.UserImage) -> Type[UserImage] | None:
     db_user_image = db.query(models.UserImage). \
         filter(models.UserImage.user_id == user_image.user_id).first()
     setattr(db_user_image, "image_ext", user_image.image_ext)

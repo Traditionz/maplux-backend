@@ -6,11 +6,11 @@ from . import models, schemas
 from .models import Address
 
 
-def get_address(db: Session, user_id: int) -> Union[Type[Address], None]:
+def get_address(db: Session, user_id: int) -> Type[Address] | None:
     return db.query(models.Address).filter(models.Address.user_id == user_id).first()
 
 
-def update_address(db: Session, address: schemas.Address) -> Union[Type[Address], None]:
+def update_address(db: Session, address: schemas.Address) -> Type[Address] | None:
     db_address = db.query(models.Address). \
         filter(models.Address.user_id == address.user_id).first()
     setattr(db_address, "street_address", address.street_address)
