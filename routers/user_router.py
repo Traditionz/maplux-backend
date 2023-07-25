@@ -47,6 +47,7 @@ async def create_user(new_user: UserCreate, request: Request, db: Session = Depe
         token = generate_activation_token(new_user=new_user,
                                           token_salt="TEST SALT")
         # TODO create new activation token model here
+        # TODO for all db creation, check if it exists before we create
         url = f"{request.url.scheme}://{request.url.hostname}:{request.url.port}/auth/user/activate/{token}"
         await Email(new_user, url, [EmailStr(new_user.email)]).send_activation_email()
     except SendActivationEmailException:
