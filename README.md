@@ -1,3 +1,5 @@
+Use Python 3.10.8
+
 For the backend project, you can run:
 
 ### `uvicorn main:app --reload`
