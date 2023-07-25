@@ -54,7 +54,7 @@ def check_password(password: bytes, password_hashed: bytes) -> bool:
     return bcrypt.checkpw(password, password_hashed)
 
 
-def generate_activation_token(new_user: UserCreate) -> str:
+def generate_activation_token(new_user: UserCreate, token_salt: str) -> str:
     serializer = URLSafeTimedSerializer(env_vars.ACTIVATE_SECRET_KEY)
     return serializer.dumps(new_user.email, salt=env_vars.ACTIVATE_SALT)
 

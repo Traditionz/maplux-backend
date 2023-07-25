@@ -44,7 +44,9 @@ async def create_user(new_user: UserCreate, request: Request, db: Session = Depe
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail="Error creating user. Please try again later.")
     try:
-        token = generate_activation_token(new_user=new_user)
+        token = generate_activation_token(new_user=new_user,
+                                          token_salt="TEST SALT")
+        # TODO create new activation token model here
         url = f"{request.url.scheme}://{request.url.hostname}:{request.url.port}/auth/user/activate/{token}"
         await Email(new_user, url, [EmailStr(new_user.email)]).send_activation_email()
     except SendActivationEmailException:
