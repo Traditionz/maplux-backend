@@ -16,6 +16,7 @@ from config import env_vars
 from database import get_db
 from domain import user
 from domain.auth_token.schemas import TokenData
+from domain.confirmation_token.models import ConfirmationToken
 from domain.user import repository
 from domain.user.models import User
 from domain.user.schemas import UserCreate
@@ -56,14 +57,14 @@ def check_password(password: bytes, password_hashed: bytes) -> bool:
 
 def generate_activation_token(new_user: UserCreate, token_salt: str) -> str:
     serializer = URLSafeTimedSerializer(env_vars.ACTIVATE_SECRET_KEY)
-    return serializer.dumps(new_user.email, salt=env_vars.ACTIVATE_SALT)
+    return serializer.dumps(new_user.email, salt=token_salt)
 
 
-def confirm_activation_token(token: str, expiration: int = 3600) -> str:
+def confirm_activation_token(activation_token: Type[ConfirmationToken]) -> str:
     try:
         serializer = URLSafeTimedSerializer(env_vars.ACTIVATE_SECRET_KEY)
         email = serializer.loads(
-            token, salt=env_vars.ACTIVATE_SALT, max_age=expiration
+            activation_token.token, salt=activation_token.token_salt
         )
         return email
     except Exception:

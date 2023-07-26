@@ -11,15 +11,18 @@ from starlette import status
 from starlette.responses import Response
 
 from database import get_db
-from domain import user, user_suspension, address, user_image
+from domain import user, user_suspension, address, user_image, confirmation_token
 from domain.address import repository
 from domain.address.schemas import AddressCreate, Address
 from domain.auth_token.schemas import Token
+from domain.confirmation_token import repository
+from domain.confirmation_token.schemas import ConfirmationTokenCreate
 from domain.user import repository
 from domain.user.schemas import UserBase, UserCreate, User
 from domain.user_image import repository
 from domain.user_image.schemas import UserImageBase, UserImageCreate, UserImage
 from domain.user_suspension import repository
+from enums.confirmation_token_type import ConfirmationTokenType
 from exception.UserExceptions import SendActivationEmailException, InvalidActivationTokenException
 from security.authentication import create_access_token, authenticate_user, get_current_active_user, BasicAuth, \
     basic_auth, generate_activation_token, confirm_activation_token
@@ -44,10 +47,16 @@ async def create_user(new_user: UserCreate, request: Request, db: Session = Depe
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail="Error creating user. Please try again later.")
     try:
+        token_salt = bcrypt.gensalt(12).decode('utf-8')
         token = generate_activation_token(new_user=new_user,
-                                          token_salt="TEST SALT")
-        # TODO create new activation token model here
-        # TODO for all db creation, check if it exists before we create
+                                          token_salt=token_salt)
+        activation_token = ConfirmationTokenCreate(
+            user_id=new_user.user_id,
+            token=token,
+            token_salt=token_salt,
+            token_type=ConfirmationTokenType.ACCOUNT_ACTIVATION
+        )
+        confirmation_token.repository.create_confirmation_token(db=db, confirmation_token=activation_token)
         url = f"{request.url.scheme}://{request.url.hostname}:{request.url.port}/auth/user/activate/{token}"
         await Email(new_user, url, [EmailStr(new_user.email)]).send_activation_email()
     except SendActivationEmailException:
@@ -56,19 +65,29 @@ async def create_user(new_user: UserCreate, request: Request, db: Session = Depe
 
     return {
         "status": "success",
-        "message": "Activation auth_token successfully sent to your email"
+        "message": "Activation token successfully sent to your email"
     }
 
 
-@router.get('/user/activate/{auth_token}')
+@router.get('/user/activate/{token}')
 async def activate_user(token: str, db: Session = Depends(get_db)):
     try:
         # TODO: expire old activation email (store in db)
-        email = confirm_activation_token(token)
+        db_token = confirmation_token.repository.get_confirmation_token(
+            db=db,
+            token=token,
+            token_type=ConfirmationTokenType.ACCOUNT_ACTIVATION
+        )
+        if db_token is None:
+            return {
+                "status": "failed",
+                "message": "Account activation token is invalid."
+            }
+        email = confirm_activation_token(db_token)
         current_user = user.repository.get_user_by_email(db=db, email=email)
         if current_user is None:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                                detail='Invalid activation auth_token.')
+                                detail='Invalid activation token.')
         current_user.activated = True
         current_user = user.repository.update_user_activate(db=db, user_update=current_user)
         if not current_user.activated:
@@ -140,6 +159,12 @@ async def create_new_user_address(new_address: AddressCreate,
                                   current_user: User = Depends(get_current_active_user),
                                   db: Session = Depends(get_db)):
     new_address.user_id = current_user.user_id
+    db_address = address.repository.get_address(db=db, user_id=current_user.user_id)
+    if db_address is None:
+        return {
+            "status": "failed",
+            "message": f"{current_user.user_id} has already created their address"
+        }
     address.repository.create_address(db=db, address=new_address)
     return {
         "status": "success",
@@ -165,6 +190,12 @@ async def create_new_user_image(new_user_image: UserImageCreate,
                                 db: Session = Depends(get_db)):
     # TODO: Front end will validate image ext and upload to s3
     new_user_image.user_id = current_user.user_id
+    db_user_image = user_image.repository.get_user_image(db=db, user_id=current_user.user_id)
+    if db_user_image is None:
+        return {
+            "status": "failed",
+            "message": f"{current_user.user_id} has already created their user image"
+        }
     user_image.repository.create_user_image(db=db, user_image=new_user_image)
     return {
         "status": "success",

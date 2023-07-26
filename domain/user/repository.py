@@ -3,7 +3,6 @@ from typing import Type
 from sqlalchemy.orm import Session
 
 from . import models, schemas
-from .models import User
 from .schemas import User
 
 

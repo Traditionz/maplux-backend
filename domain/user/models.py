@@ -21,3 +21,4 @@ class User(Base):
     user_suspension = relationship("UserSuspension", back_populates="user", uselist=False)
     address = relationship("Address", back_populates="user", uselist=False)
     user_image = relationship("UserImage", back_populates="user", uselist=False)
+    confirmation_token = relationship("ConfirmationToken", back_populates="user")
