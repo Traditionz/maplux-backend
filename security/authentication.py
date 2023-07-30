@@ -19,7 +19,7 @@ from domain.auth_token.schemas import TokenData
 from domain.confirmation_token.models import ConfirmationToken
 from domain.user import repository
 from domain.user.models import User
-from domain.user.schemas import UserCreate
+from domain.user.schemas import UserCreate, UserBase
 from exception.UserExceptions import InvalidActivationTokenException
 from security.cookie import OAuth2PasswordBearerCookie
 
@@ -55,9 +55,9 @@ def check_password(password: bytes, password_hashed: bytes) -> bool:
     return bcrypt.checkpw(password, password_hashed)
 
 
-def generate_activation_token(new_user: UserCreate, token_salt: str) -> str:
+def generate_activation_token(current_user: UserBase, token_salt: str) -> str:
     serializer = URLSafeTimedSerializer(env_vars.ACTIVATE_SECRET_KEY)
-    return serializer.dumps(new_user.email, salt=token_salt)
+    return serializer.dumps(current_user.email, salt=token_salt)
 
 
 def confirm_activation_token(activation_token: Type[ConfirmationToken]) -> str:
@@ -71,7 +71,7 @@ def confirm_activation_token(activation_token: Type[ConfirmationToken]) -> str:
         raise InvalidActivationTokenException("Token is expired or invalid.")
 
 
-def authenticate_user(db, email, password) -> Type[User] | None:
+def authenticate_user(db: Session, email: str, password: str) -> Type[User] | None:
     db_user = repository.get_user_by_email(db=db, email=email)
     if db_user is None:
         return None

@@ -32,7 +32,7 @@ router = APIRouter()
 
 
 @router.post('/user/', status_code=status.HTTP_201_CREATED)
-async def create_user(new_user: UserCreate, request: Request, db: Session = Depends(get_db)):
+async def create_user(request: Request, new_user: UserCreate, db: Session = Depends(get_db)):
     db_user = user.repository.get_user_by_email(db=db, email=new_user.email)
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered.")
@@ -48,7 +48,7 @@ async def create_user(new_user: UserCreate, request: Request, db: Session = Depe
                             detail="Error creating user. Please try again later.")
     try:
         token_salt = bcrypt.gensalt(12).decode('utf-8')
-        token = generate_activation_token(new_user=new_user,
+        token = generate_activation_token(current_user=new_user,
                                           token_salt=token_salt)
         activation_token = ConfirmationTokenCreate(
             user_id=new_user.user_id,
@@ -65,20 +65,59 @@ async def create_user(new_user: UserCreate, request: Request, db: Session = Depe
 
     return {
         "status": "success",
-        "message": "Activation token successfully sent to your email"
+        "message": f"Activation token successfully sent to {new_user.user_id}'s email"
+    }
+
+
+@router.put('/user/activate/resend/')
+async def resend_activation_token(request: Request,
+                                  current_user: User = Depends(get_current_active_user),
+                                  db: Session = Depends(get_db)):
+    if current_user.activated:
+        return {
+            "status": "failed",
+            "message": f"User {current_user.user_id} is already activated"
+        }
+    db_token = confirmation_token.repository.get_confirmation_token(
+        db=db,
+        token_type=ConfirmationTokenType.ACCOUNT_ACTIVATION
+    )
+    token_salt = bcrypt.gensalt(12).decode('utf-8')
+    token = generate_activation_token(current_user=current_user,
+                                      token_salt=token_salt)
+    activation_token = ConfirmationTokenCreate(
+        user_id=current_user.user_id,
+        token=token,
+        token_salt=token_salt,
+        token_type=ConfirmationTokenType.ACCOUNT_ACTIVATION
+    )
+    if db_token is not None:
+        confirmation_token.repository.delete_confirmation_token(
+            db=db,
+            token_type=ConfirmationTokenType.ACCOUNT_ACTIVATION
+        )
+    confirmation_token.repository.create_confirmation_token(db=db, confirmation_token=activation_token)
+    url = f"{request.url.scheme}://{request.url.hostname}:{request.url.port}/auth/user/activate/{token}"
+    await Email(current_user, url, [EmailStr(current_user.email)]).send_activation_email()
+    return {
+        "status": "success",
+        "message": f"Activation token successfully has been resent to {current_user.user_id}'s email"
     }
 
 
 @router.get('/user/activate/{token}')
 async def activate_user(token: str, db: Session = Depends(get_db)):
     try:
-        # TODO: expire old activation email (store in db)
         db_token = confirmation_token.repository.get_confirmation_token(
             db=db,
-            token=token,
             token_type=ConfirmationTokenType.ACCOUNT_ACTIVATION
         )
         if db_token is None:
+            return {
+                "status": "failed",
+                "message": "Account activation token is expired or invalid."
+            }
+        if db_token.token != token:
             return {
                 "status": "failed",
                 "message": "Account activation token is invalid."
@@ -95,7 +134,7 @@ async def activate_user(token: str, db: Session = Depends(get_db)):
         # TODO: redirect to You're almost done page if address is empty.
         return {
             "status": "success",
-            "message": "Account verified successfully"
+            "message": f"User {current_user.user_id} has been verified"
         }
     except InvalidActivationTokenException:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

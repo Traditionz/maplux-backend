@@ -3,7 +3,7 @@ from typing import Type
 from sqlalchemy.orm import Session
 
 from . import models, schemas
-from .schemas import User
+from .models import User
 
 
 def create_user(db: Session, user: schemas.UserCreate) -> User:

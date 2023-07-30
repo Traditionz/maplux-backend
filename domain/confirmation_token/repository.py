@@ -19,9 +19,20 @@ def create_confirmation_token(db: Session, confirmation_token: schemas.Confirmat
     return db_confirmation_token
 
 
-def get_confirmation_token(db: Session, token: str, token_type: ConfirmationTokenType) -> \
+def get_confirmation_token(db: Session, token_type: ConfirmationTokenType) -> \
         Type[ConfirmationToken] | None:
-    return db.query(models.ConfirmationToken).filter(
-        models.ConfirmationToken.token.like(token),
-        models.ConfirmationToken.token_type.like(token_type)
-    ).first()
+    return db.query(models.ConfirmationToken).filter(models.ConfirmationToken.token_type == token_type).first()
+
+
+def delete_confirmation_token(db: Session, token_type: ConfirmationTokenType) -> None:
+    db_confirmation_token = db.query(models.ConfirmationToken).\
+        filter(models.ConfirmationToken.token_type == token_type).first()
+    db.delete(db_confirmation_token)
+    db.commit()
+
+# def get_confirmation_token(db: Session, token: str, token_type: ConfirmationTokenType) -> \
+#         Type[ConfirmationToken] | None:
+#     return db.query(models.ConfirmationToken).filter(
+#         models.ConfirmationToken.token.like(token),
+#         models.ConfirmationToken.token_type.like(token_type)
+#     ).first()
