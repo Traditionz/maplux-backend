@@ -131,6 +131,9 @@ async def activate_user(token: str, db: Session = Depends(get_db)):
         current_user = user.repository.update_user_activate(db=db, user_update=current_user)
         if not current_user.activated:
             raise Exception
+        confirmation_token.repository.delete_confirmation_token(
+            db=db, token_type=ConfirmationTokenType.ACCOUNT_ACTIVATION
+        )
         # TODO: redirect to You're almost done page if address is empty.
         return {
             "status": "success",
@@ -142,6 +145,32 @@ async def activate_user(token: str, db: Session = Depends(get_db)):
     except Exception:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail="Could not activate user.")
+
+
+@router.get("/user/password/reset/{email}")
+async def reset_password(request: Request, email: str, db: Session = Depends(get_db)):
+    db_user = user.repository.get_user_by_email(db=db, email=email)
+    if db_user is None:
+        return {
+            "status": "success",
+            "message": "The password reset email has been sent"
+        }
+    token_salt = bcrypt.gensalt(12).decode('utf-8')
+    token = generate_activation_token(current_user=db_user,
+                                      token_salt=token_salt)
+    password_reset_token = ConfirmationTokenCreate(
+        user_id=db_user.user_id,
+        token=token,
+        token_salt=token_salt,
+        token_type=ConfirmationTokenType.PASSWORD_RESET
+    )
+    confirmation_token.repository.create_confirmation_token(db=db, confirmation_token=password_reset_token)
+    url = f"{request.url.scheme}://{request.url.hostname}:{request.url.port}/auth/user/activate/{token}"
+    await Email(db_user, url, [EmailStr(db_user.email)]).send_activation_email()
+    return {
+        "status": "success",
+        "message": "The password reset email has been sent"
+    }
 
 
 @router.post("/auth_token/", response_model=Token)

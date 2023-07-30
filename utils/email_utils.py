@@ -65,3 +65,7 @@ class Email:
         except Exception:
 
             raise SendActivationEmailException('Error sending activation email.')
+
+    async def send_password_reset_email(self):
+        # TODO
+        pass
