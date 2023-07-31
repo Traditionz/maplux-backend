@@ -147,8 +147,8 @@ async def activate_user(token: str, db: Session = Depends(get_db)):
                             detail="Could not activate user.")
 
 
-@router.get("/user/password/reset/{email}")
-async def reset_password(request: Request, email: str, db: Session = Depends(get_db)):
+@router.get("/user/password/forgot/{email}")
+async def forgot_password(request: Request, email: str, db: Session = Depends(get_db)):
     db_user = user.repository.get_user_by_email(db=db, email=email)
     if db_user is None:
         return {
@@ -171,6 +171,11 @@ async def reset_password(request: Request, email: str, db: Session = Depends(get
         "status": "success",
         "message": "The password reset email has been sent"
     }
+
+
+@router.patch('/user/password/reset/')
+async def reset_password():
+    pass
 
 
 @router.post("/auth_token/", response_model=Token)
