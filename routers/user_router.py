@@ -173,7 +173,7 @@ async def forgot_password(request: Request, email: str, db: Session = Depends(ge
     }
 
 
-@router.patch('/user/password/reset/')
+@router.patch('/user/password/reset/{token}')
 async def reset_password():
     pass
 

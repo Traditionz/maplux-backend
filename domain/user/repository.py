@@ -4,7 +4,6 @@ from sqlalchemy.orm import Session
 
 from . import models, schemas
 from .models import User
-from .schemas import User
 
 
 def create_user(db: Session, user: schemas.UserCreate) -> User:
@@ -35,7 +34,7 @@ def get_users(db: Session, skip: int = 0, limit: int = 100) -> list[Type[User]]:
     return db.query(models.User).offset(skip).limit(limit).all()
 
 
-def update_user_activate(db: Session, user_update: User) -> User:
+def update_user_activate(db: Session, user_update: schemas.User) -> User:
     db_user = db.query(models.User). \
         filter(models.User.user_id == user_update.user_id).first()
     setattr(db_user, "activated", user_update.activated)
