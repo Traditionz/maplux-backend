@@ -1,5 +1,5 @@
 from datetime import timedelta, datetime
-from typing import Optional, Type
+from typing import Optional
 
 import bcrypt
 import jwt
@@ -19,7 +19,7 @@ from domain.auth_token.schemas import TokenData
 from domain.confirmation_token.models import ConfirmationToken
 from domain.user import repository
 from domain.user.models import User
-from domain.user.schemas import UserCreate, UserBase
+from domain.user.schemas import UserBase
 from exception.UserExceptions import InvalidConfirmationTokenException
 from security.cookie import OAuth2PasswordBearerCookie
 
