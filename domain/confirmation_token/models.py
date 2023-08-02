@@ -12,5 +12,6 @@ class ConfirmationToken(Base):
     token = Column(String, primary_key=True)
     token_salt = Column(String)
     token_type = Column(Enum(ConfirmationTokenType))
+    max_age = Column(Integer)
 
     user = relationship("User", back_populates="confirmation_token", uselist=False)

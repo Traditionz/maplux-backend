@@ -20,7 +20,7 @@ from domain.confirmation_token.models import ConfirmationToken
 from domain.user import repository
 from domain.user.models import User
 from domain.user.schemas import UserCreate, UserBase
-from exception.UserExceptions import InvalidActivationTokenException
+from exception.UserExceptions import InvalidConfirmationTokenException
 from security.cookie import OAuth2PasswordBearerCookie
 
 oauth2_scheme = OAuth2PasswordBearerCookie(tokenUrl="/auth/user/login/")
@@ -60,18 +60,18 @@ def generate_activation_token(current_user: UserBase, token_salt: str) -> str:
     return serializer.dumps(current_user.email, salt=token_salt)
 
 
-def confirm_activation_token(activation_token: Type[ConfirmationToken]) -> str:
+def confirm_activation_token(activation_token: ConfirmationToken) -> str:
     try:
         serializer = URLSafeTimedSerializer(env_vars.ACTIVATE_SECRET_KEY)
         email = serializer.loads(
-            activation_token.token, salt=activation_token.token_salt
+            activation_token.token, salt=activation_token.token_salt, max_age=activation_token.max_age
         )
         return email
     except Exception:
-        raise InvalidActivationTokenException("Token is expired or invalid.")
+        raise InvalidConfirmationTokenException("Token is expired or invalid.")
 
 
-def authenticate_user(db: Session, email: str, password: str) -> Type[User] | None:
+def authenticate_user(db: Session, email: str, password: str) -> User | None:
     db_user = repository.get_user_by_email(db=db, email=email)
     if db_user is None:
         return None
@@ -91,7 +91,7 @@ def create_access_token(data: dict, expires: timedelta | None = None) -> str:
     return encoded_jwt
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> Type[User] | None:
+async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User | None:
     payload = jwt.decode(token, env_vars.JWT_SECRET_KEY, algorithms=[env_vars.JWT_ALGORITHM])
     email: str = payload.get('sub')
     if email is None:

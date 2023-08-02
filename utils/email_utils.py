@@ -61,11 +61,16 @@ class Email:
 
     async def send_activation_email(self):
         try:
-            await self.send_email('Activate your Maplux account', 'email_activation')
+            email_subject = f"Activate your {env_vars.APP_NAME} account"
+            await self.send_email(email_subject, 'email_activation')
         except Exception:
 
             raise SendActivationEmailException('Error sending activation email.')
 
     async def send_password_reset_email(self):
-        # TODO
-        pass
+        try:
+            email_subject = f"Password Reset - {env_vars.APP_NAME}"
+            await self.send_email(email_subject, 'reset_password')
+        except Exception:
+
+            raise SendActivationEmailException('Error sending password reset email.')

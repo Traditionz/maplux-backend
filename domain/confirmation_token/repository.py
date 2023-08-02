@@ -1,5 +1,3 @@
-from typing import Type
-
 from sqlalchemy.orm import Session
 
 from enums.confirmation_token_type import ConfirmationTokenType
@@ -12,7 +10,8 @@ def create_confirmation_token(db: Session, confirmation_token: schemas.Confirmat
         user_id=confirmation_token.user_id,
         token=confirmation_token.token,
         token_salt=confirmation_token.token_salt,
-        token_type=confirmation_token.token_type
+        token_type=confirmation_token.token_type,
+        max_age=confirmation_token.max_age
     )
     db.add(db_confirmation_token)
     db.commit()
@@ -20,7 +19,7 @@ def create_confirmation_token(db: Session, confirmation_token: schemas.Confirmat
 
 
 def get_confirmation_token(db: Session, token_type: ConfirmationTokenType) -> \
-        Type[ConfirmationToken] | None:
+        ConfirmationToken | None:
     return db.query(models.ConfirmationToken).filter(models.ConfirmationToken.token_type == token_type).first()
 
 

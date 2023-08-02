@@ -23,7 +23,7 @@ from domain.user_image import repository
 from domain.user_image.schemas import UserImageBase, UserImageCreate, UserImage
 from domain.user_suspension import repository
 from enums.confirmation_token_type import ConfirmationTokenType
-from exception.UserExceptions import SendActivationEmailException, InvalidActivationTokenException
+from exception.UserExceptions import SendActivationEmailException, InvalidConfirmationTokenException
 from security.authentication import create_access_token, authenticate_user, get_current_active_user, BasicAuth, \
     basic_auth, generate_activation_token, confirm_activation_token
 from utils.email_utils import Email
@@ -54,7 +54,8 @@ async def create_user(request: Request, new_user: UserCreate, db: Session = Depe
             user_id=new_user.user_id,
             token=token,
             token_salt=token_salt,
-            token_type=ConfirmationTokenType.ACCOUNT_ACTIVATION
+            token_type=ConfirmationTokenType.ACCOUNT_ACTIVATION,
+            max_age=1200
         )
         confirmation_token.repository.create_confirmation_token(db=db, confirmation_token=activation_token)
         url = f"{request.url.scheme}://{request.url.hostname}:{request.url.port}/auth/user/activate/{token}"
@@ -65,7 +66,7 @@ async def create_user(request: Request, new_user: UserCreate, db: Session = Depe
 
     return {
         "status": "success",
-        "message": f"Activation token successfully sent to {new_user.user_id}'s email"
+        "message": f"Activation token successfully sent to {new_user.user_id}'s email."
     }
 
 
@@ -76,19 +77,10 @@ async def resend_activation_token(request: Request,
     if current_user.activated:
         return {
             "status": "failed",
-            "message": f"User {current_user.user_id} is already activated"
+            "message": f"User {current_user.user_id} is already activated."
         }
     db_token = confirmation_token.repository.get_confirmation_token(
         db=db,
-        token_type=ConfirmationTokenType.ACCOUNT_ACTIVATION
-    )
-    token_salt = bcrypt.gensalt(12).decode('utf-8')
-    token = generate_activation_token(current_user=current_user,
-                                      token_salt=token_salt)
-    activation_token = ConfirmationTokenCreate(
-        user_id=current_user.user_id,
-        token=token,
-        token_salt=token_salt,
         token_type=ConfirmationTokenType.ACCOUNT_ACTIVATION
     )
     if db_token is not None:
@@ -96,12 +88,22 @@ async def resend_activation_token(request: Request,
             db=db,
             token_type=ConfirmationTokenType.ACCOUNT_ACTIVATION
         )
+    token_salt = bcrypt.gensalt(12).decode('utf-8')
+    token = generate_activation_token(current_user=current_user,
+                                      token_salt=token_salt)
+    activation_token = ConfirmationTokenCreate(
+        user_id=current_user.user_id,
+        token=token,
+        token_salt=token_salt,
+        token_type=ConfirmationTokenType.ACCOUNT_ACTIVATION,
+        max_age=1200
+    )
     confirmation_token.repository.create_confirmation_token(db=db, confirmation_token=activation_token)
     url = f"{request.url.scheme}://{request.url.hostname}:{request.url.port}/auth/user/activate/{token}"
     await Email(current_user, url, [EmailStr(current_user.email)]).send_activation_email()
     return {
         "status": "success",
-        "message": f"Activation token successfully has been resent to {current_user.user_id}'s email"
+        "message": f"Activation token successfully has been resent to {current_user.user_id}'s email."
     }
 
 
@@ -127,8 +129,12 @@ async def activate_user(token: str, db: Session = Depends(get_db)):
         if current_user is None:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                                 detail='Invalid activation token.')
-        current_user.activated = True
-        current_user = user.repository.update_user_activate(db=db, user_update=current_user)
+
+        user_update = User()
+        user_update.user_id = current_user.user_id
+        user_update.activated = True
+
+        current_user = user.repository.update_user_activate(db=db, user_update=user_update)
         if not current_user.activated:
             raise Exception
         confirmation_token.repository.delete_confirmation_token(
@@ -137,9 +143,12 @@ async def activate_user(token: str, db: Session = Depends(get_db)):
         # TODO: redirect to You're almost done page if address is empty.
         return {
             "status": "success",
-            "message": f"User {current_user.user_id} has been verified"
+            "message": f"User {current_user.user_id} activated."
         }
-    except InvalidActivationTokenException:
+    except InvalidConfirmationTokenException:
+        confirmation_token.repository.delete_confirmation_token(
+            db=db, token_type=ConfirmationTokenType.ACCOUNT_ACTIVATION
+        )
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail="Token is expired or invalid.")
     except Exception:
@@ -153,8 +162,17 @@ async def forgot_password(request: Request, email: str, db: Session = Depends(ge
     if db_user is None:
         return {
             "status": "success",
-            "message": "The password reset email has been sent"
+            "message": "The password reset email has been sent."
         }
+    db_token = confirmation_token.repository.get_confirmation_token(
+        db=db,
+        token_type=ConfirmationTokenType.PASSWORD_RESET
+    )
+    if db_token is not None:
+        confirmation_token.repository.delete_confirmation_token(
+            db=db,
+            token_type=ConfirmationTokenType.PASSWORD_RESET
+        )
     token_salt = bcrypt.gensalt(12).decode('utf-8')
     token = generate_activation_token(current_user=db_user,
                                       token_salt=token_salt)
@@ -162,27 +180,77 @@ async def forgot_password(request: Request, email: str, db: Session = Depends(ge
         user_id=db_user.user_id,
         token=token,
         token_salt=token_salt,
-        token_type=ConfirmationTokenType.PASSWORD_RESET
+        token_type=ConfirmationTokenType.PASSWORD_RESET,
+        max_age=900
     )
     confirmation_token.repository.create_confirmation_token(db=db, confirmation_token=password_reset_token)
-    url = f"{request.url.scheme}://{request.url.hostname}:{request.url.port}/auth/user/activate/{token}"
-    await Email(db_user, url, [EmailStr(db_user.email)]).send_activation_email()
+    # TODO: reset password will redirect to a webpage
+    url = f"{request.url.scheme}://{request.url.hostname}:{request.url.port}/auth/pages/user/password/reset/{token}"
+    await Email(db_user, url, [EmailStr(db_user.email)]).send_password_reset_email()
     return {
         "status": "success",
-        "message": "The password reset email has been sent"
+        "message": "The password reset email has been sent."
     }
 
 
 @router.patch('/user/password/reset/{token}')
-async def reset_password():
-    pass
+async def reset_password(token: str, user_update: UserCreate, db: Session = Depends(get_db)):
+    try:
+        db_token = confirmation_token.repository.get_confirmation_token(
+            db=db,
+            token_type=ConfirmationTokenType.PASSWORD_RESET
+        )
+        if db_token is None:
+            return {
+                "status": "failed",
+                "message": "Password reset URL is expired or invalid."
+            }
+        if db_token.token != token:
+            return {
+                "status": "failed",
+                "message": "Password reset URL is invalid."
+            }
+        email = confirm_activation_token(db_token)
+        current_user = user.repository.get_user_by_email(db=db, email=email)
+        old_password_salt = current_user.password_salt
+        old_password_hash = current_user.password_hashed
+        if current_user is None:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                                detail='Invalid password reset URL.')
+
+        user_update.user_id = current_user.user_id
+        user_update.password_salt = bcrypt.gensalt(12)
+        user_update.password_hashed = bcrypt.hashpw(user_update.password.encode('utf-8'), current_user.password_salt)
+
+        current_user = user.repository.update_user_password(db=db, user_update=user_update)
+        if current_user.password_hashed is None or current_user.password_salt is None:
+            current_user.password_salt = old_password_salt
+            current_user.password_hashed = old_password_hash
+            user.repository.update_user_password(db=db, user_update=current_user)
+            raise Exception
+        confirmation_token.repository.delete_confirmation_token(
+            db=db, token_type=ConfirmationTokenType.PASSWORD_RESET
+        )
+        return {
+            "status": "success",
+            "message": f"User {current_user.user_id} has reset their password."
+        }
+    except InvalidConfirmationTokenException:
+        confirmation_token.repository.delete_confirmation_token(
+            db=db, token_type=ConfirmationTokenType.PASSWORD_RESET
+        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail="Password reset URL is expired or invalid.")
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail="Could not reset user password.")
 
 
 @router.post("/auth_token/", response_model=Token)
 async def route_login_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     db_user = authenticate_user(db=db, email=form_data.username, password=form_data.password)
     if not user:
-        raise HTTPException(status_code=400, detail="Incorrect username or password")
+        raise HTTPException(status_code=400, detail="Incorrect username or password.")
     access_token = create_access_token(
         data=dict(sub=db_user.email), expires=timedelta(days=365)
     )
@@ -217,9 +285,6 @@ async def login_user(auth: BasicAuth = Depends(basic_auth), db: Session = Depend
     return response
 
 
-# TODO: separate confirmation tokens (see comment in create user)
-#  to another table and make forget password endpoint
-
 @router.get('/user/logout/')
 async def logout_user():
     response = Response()
@@ -236,12 +301,12 @@ async def create_new_user_address(new_address: AddressCreate,
     if db_address is None:
         return {
             "status": "failed",
-            "message": f"{current_user.user_id} has already created their address"
+            "message": f"{current_user.user_id} has already created their address."
         }
     address.repository.create_address(db=db, address=new_address)
     return {
         "status": "success",
-        "message": f"{current_user.user_id} has created their address"
+        "message": f"{current_user.user_id} has created their address."
     }
 
 
@@ -253,7 +318,7 @@ async def update_new_user_address(new_address: Address,
     address.repository.update_address(db=db, address=new_address)
     return {
         "status": "success",
-        "message": f"{current_user.user_id} has created their address"
+        "message": f"{current_user.user_id} has created their address."
     }
 
 
@@ -267,12 +332,12 @@ async def create_new_user_image(new_user_image: UserImageCreate,
     if db_user_image is None:
         return {
             "status": "failed",
-            "message": f"{current_user.user_id} has already created their user image"
+            "message": f"{current_user.user_id} has already created their user image."
         }
     user_image.repository.create_user_image(db=db, user_image=new_user_image)
     return {
         "status": "success",
-        "message": f"{new_user_image.user_id} has created their user image"
+        "message": f"{new_user_image.user_id} has created their user image."
     }
 
 
@@ -284,7 +349,7 @@ async def update_user_image(user_image_update: UserImage,
     user_image.repository.update_user_image(db=db, user_image=user_image_update)
     return {
         "status": "success",
-        "message": f"{user_image_update.user_id} has updated their user image"
+        "message": f"{user_image_update.user_id} has updated their user image."
     }
 
 

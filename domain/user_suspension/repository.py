@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-from typing import Type
 
 from sqlalchemy.orm import Session
 
@@ -7,12 +6,12 @@ from . import models, schemas
 from .models import UserSuspension
 
 
-def get_user_suspension(db: Session, user_id: int) -> Type[UserSuspension] | None:
+def get_user_suspension(db: Session, user_id: int) -> UserSuspension | None:
     return db.query(models.UserSuspension).filter(models.UserSuspension.user_id == user_id).first()
 
 
 def update_user_suspension(db: Session, user_suspension_update: schemas.UserSuspension) -> \
-        Type[UserSuspension] | None:
+        UserSuspension | None:
     db_user_suspension = db.query(models.UserSuspension).\
         filter(models.UserSuspension.user_id == user_suspension_update.user_id).first()
     setattr(user_suspension_update, "expiration_date", user_suspension_update.expiration_date)

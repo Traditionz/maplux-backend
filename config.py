@@ -2,6 +2,8 @@ from pydantic import BaseSettings, EmailStr
 
 
 class EnvVars(BaseSettings):
+    APP_NAME: str
+
     CLIENT_ORIGIN: str
 
     API_PREFIX: str

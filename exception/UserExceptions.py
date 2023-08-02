@@ -1,4 +1,4 @@
-class InvalidActivationTokenException(Exception):
+class InvalidConfirmationTokenException(Exception):
     pass
 
 

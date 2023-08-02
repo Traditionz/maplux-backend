@@ -34,9 +34,18 @@ def get_users(db: Session, skip: int = 0, limit: int = 100) -> list[Type[User]]:
     return db.query(models.User).offset(skip).limit(limit).all()
 
 
-def update_user_activate(db: Session, user_update: schemas.User) -> User:
+def update_user_activate(db: Session, user_update: schemas.User) -> User | None:
     db_user = db.query(models.User). \
         filter(models.User.user_id == user_update.user_id).first()
     setattr(db_user, "activated", user_update.activated)
     db.commit()
-    return user_update
+    return db_user
+
+
+def update_user_password(db: Session, user_update: schemas.UserCreate) -> User | None:
+    db_user = db.query(models.User). \
+        filter(models.User.user_id == user_update.user_id).first()
+    setattr(db_user, "password_salt", user_update.password_salt)
+    setattr(db_user, "password_hashed", user_update.password_hashed)
+    db.commit()
+    return db_user

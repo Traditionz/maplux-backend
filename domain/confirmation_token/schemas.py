@@ -8,6 +8,7 @@ class ConfirmationTokenBase(BaseModel):
     token: str
     token_salt: str
     token_type: ConfirmationTokenType
+    max_age: int
 
     class Config:
         orm_mode = True
