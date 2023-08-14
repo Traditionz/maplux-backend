@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from enums.confirmation_token_type import ConfirmationTokenType
 
 
-class ConfirmationTokenBase(BaseModel):
+class ConfirmationTokenBaseSchema(BaseModel):
     user_id: int | None
     token: str
     token_salt: str
@@ -14,9 +14,5 @@ class ConfirmationTokenBase(BaseModel):
         orm_mode = True
 
 
-class ConfirmationTokenCreate(ConfirmationTokenBase):
-    pass
-
-
-class ConfirmationToken(ConfirmationTokenBase):
+class ConfirmationTokenCreateSchema(ConfirmationTokenBaseSchema):
     pass

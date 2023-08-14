@@ -15,7 +15,6 @@ class User(Base):
     first_name = Column(String)
     last_name = Column(String)
     date_of_birth = Column(Date)
-    email_confirmation_token = Column(String)
     phone_number = Column(String)
 
     user_suspension = relationship("UserSuspension", back_populates="user", uselist=False)

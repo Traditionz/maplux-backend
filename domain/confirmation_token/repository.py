@@ -1,12 +1,13 @@
 from sqlalchemy.orm import Session
 
 from enums.confirmation_token_type import ConfirmationTokenType
-from . import models, schemas
+
 from .models import ConfirmationToken
+from .schemas import ConfirmationTokenCreateSchema
 
 
-def create_confirmation_token(db: Session, confirmation_token: schemas.ConfirmationTokenCreate) -> ConfirmationToken:
-    db_confirmation_token = models.ConfirmationToken(
+def create_confirmation_token(db: Session, confirmation_token: ConfirmationTokenCreateSchema) -> ConfirmationToken:
+    db_confirmation_token = ConfirmationToken(
         user_id=confirmation_token.user_id,
         token=confirmation_token.token,
         token_salt=confirmation_token.token_salt,
@@ -20,12 +21,11 @@ def create_confirmation_token(db: Session, confirmation_token: schemas.Confirmat
 
 def get_confirmation_token(db: Session, token_type: ConfirmationTokenType) -> \
         ConfirmationToken | None:
-    return db.query(models.ConfirmationToken).filter(models.ConfirmationToken.token_type == token_type).first()
+    return db.query(ConfirmationToken).filter(ConfirmationToken.token_type == token_type).first()
 
 
 def delete_confirmation_token(db: Session, token_type: ConfirmationTokenType) -> None:
-    db_confirmation_token = db.query(models.ConfirmationToken).\
-        filter(models.ConfirmationToken.token_type == token_type).first()
+    db_confirmation_token = db.query(ConfirmationToken).filter(ConfirmationToken.token_type == token_type).first()
     db.delete(db_confirmation_token)
     db.commit()
 

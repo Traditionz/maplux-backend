@@ -13,18 +13,18 @@ from starlette.responses import Response
 from database import get_db
 from domain import user, user_suspension, address, user_image, confirmation_token
 from domain.address import repository
-from domain.address.schemas import AddressCreate, Address
-from domain.auth_token.schemas import Token
+from domain.address.schemas import AddressCreateSchema
+from domain.auth_token.schemas import TokenSchema
 from domain.confirmation_token import repository
-from domain.confirmation_token.schemas import ConfirmationTokenCreate
+from domain.confirmation_token.schemas import ConfirmationTokenCreateSchema
 from domain.user import repository
-from domain.user.schemas import UserBase, UserCreate, User
+from domain.user.schemas import UserBaseSchema, UserCreateSchema
 from domain.user_image import repository
-from domain.user_image.schemas import UserImageBase, UserImageCreate, UserImage
+from domain.user_image.schemas import UserImageBaseSchema, UserImageCreateSchema
 from domain.user_suspension import repository
 from enums.confirmation_token_type import ConfirmationTokenType
 from exception.UserExceptions import SendActivationEmailException, InvalidConfirmationTokenException
-from security.authentication import create_access_token, authenticate_user, get_current_active_user, BasicAuth, \
+from security.authentication import create_access_token, authenticate_user, get_current_user, BasicAuth, \
     basic_auth, generate_activation_token, confirm_activation_token
 from utils.email_utils import Email
 
@@ -32,7 +32,7 @@ router = APIRouter()
 
 
 @router.post('/user/', status_code=status.HTTP_201_CREATED)
-async def create_user(request: Request, new_user: UserCreate, db: Session = Depends(get_db)):
+async def create_user(request: Request, new_user: UserCreateSchema, db: Session = Depends(get_db)):
     db_user = user.repository.get_user_by_email(db=db, email=new_user.email)
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered.")
@@ -50,7 +50,7 @@ async def create_user(request: Request, new_user: UserCreate, db: Session = Depe
         token_salt = bcrypt.gensalt(12).decode('utf-8')
         token = generate_activation_token(current_user=new_user,
                                           token_salt=token_salt)
-        activation_token = ConfirmationTokenCreate(
+        activation_token = ConfirmationTokenCreateSchema(
             user_id=new_user.user_id,
             token=token,
             token_salt=token_salt,
@@ -72,7 +72,7 @@ async def create_user(request: Request, new_user: UserCreate, db: Session = Depe
 
 @router.put('/user/activate/resend/')
 async def resend_activation_token(request: Request,
-                                  current_user: User = Depends(get_current_active_user),
+                                  current_user: UserBaseSchema = Depends(get_current_user),
                                   db: Session = Depends(get_db)):
     if current_user.activated:
         return {
@@ -91,7 +91,7 @@ async def resend_activation_token(request: Request,
     token_salt = bcrypt.gensalt(12).decode('utf-8')
     token = generate_activation_token(current_user=current_user,
                                       token_salt=token_salt)
-    activation_token = ConfirmationTokenCreate(
+    activation_token = ConfirmationTokenCreateSchema(
         user_id=current_user.user_id,
         token=token,
         token_salt=token_salt,
@@ -130,7 +130,7 @@ async def activate_user(token: str, db: Session = Depends(get_db)):
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                                 detail='Invalid activation token.')
 
-        user_update = User()
+        user_update = UserBaseSchema()
         user_update.user_id = current_user.user_id
         user_update.activated = True
 
@@ -176,7 +176,7 @@ async def forgot_password(request: Request, email: str, db: Session = Depends(ge
     token_salt = bcrypt.gensalt(12).decode('utf-8')
     token = generate_activation_token(current_user=db_user,
                                       token_salt=token_salt)
-    password_reset_token = ConfirmationTokenCreate(
+    password_reset_token = ConfirmationTokenCreateSchema(
         user_id=db_user.user_id,
         token=token,
         token_salt=token_salt,
@@ -194,7 +194,7 @@ async def forgot_password(request: Request, email: str, db: Session = Depends(ge
 
 
 @router.patch('/user/password/reset/{token}')
-async def reset_password(token: str, user_update: UserCreate, db: Session = Depends(get_db)):
+async def reset_password(token: str, user_update: UserCreateSchema, db: Session = Depends(get_db)):
     try:
         db_token = confirmation_token.repository.get_confirmation_token(
             db=db,
@@ -246,7 +246,7 @@ async def reset_password(token: str, user_update: UserCreate, db: Session = Depe
                             detail="Could not reset user password.")
 
 
-@router.post("/auth_token/", response_model=Token)
+@router.post("/auth_token/", response_model=TokenSchema)
 async def route_login_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     db_user = authenticate_user(db=db, email=form_data.username, password=form_data.password)
     if not user:
@@ -293,12 +293,12 @@ async def logout_user():
 
 
 @router.post('/user/address/create/')
-async def create_new_user_address(new_address: AddressCreate,
-                                  current_user: User = Depends(get_current_active_user),
+async def create_new_user_address(new_address: AddressCreateSchema,
+                                  current_user: UserBaseSchema = Depends(get_current_user),
                                   db: Session = Depends(get_db)):
     new_address.user_id = current_user.user_id
     db_address = address.repository.get_address(db=db, user_id=current_user.user_id)
-    if db_address is None:
+    if db_address is not None:
         return {
             "status": "failed",
             "message": f"{current_user.user_id} has already created their address."
@@ -311,25 +311,25 @@ async def create_new_user_address(new_address: AddressCreate,
 
 
 @router.put('/user/address/update/')
-async def update_new_user_address(new_address: Address,
-                                  current_user: User = Depends(get_current_active_user),
+async def update_new_user_address(new_address: AddressCreateSchema,
+                                  current_user: UserBaseSchema = Depends(get_current_user),
                                   db: Session = Depends(get_db)):
     new_address.user_id = current_user.user_id
-    address.repository.update_address(db=db, address=new_address)
+    address.repository.update_address(db=db, new_address=new_address)
     return {
         "status": "success",
-        "message": f"{current_user.user_id} has created their address."
+        "message": f"{current_user.user_id} has updated their address."
     }
 
 
 @router.post('/user/profile/image/create/')
-async def create_new_user_image(new_user_image: UserImageCreate,
-                                current_user: User = Depends(get_current_active_user),
+async def create_new_user_image(new_user_image: UserImageCreateSchema,
+                                current_user: UserBaseSchema = Depends(get_current_user),
                                 db: Session = Depends(get_db)):
     # TODO: Front end will validate image ext and upload to s3
     new_user_image.user_id = current_user.user_id
     db_user_image = user_image.repository.get_user_image(db=db, user_id=current_user.user_id)
-    if db_user_image is None:
+    if db_user_image is not None:
         return {
             "status": "failed",
             "message": f"{current_user.user_id} has already created their user image."
@@ -341,9 +341,9 @@ async def create_new_user_image(new_user_image: UserImageCreate,
     }
 
 
-@router.put('/user/profile/image/update/', response_model=UserImageBase)
-async def update_user_image(user_image_update: UserImage,
-                            current_user: User = Depends(get_current_active_user),
+@router.put('/user/profile/image/update/')
+async def update_user_image(user_image_update: UserImageBaseSchema,
+                            current_user: UserBaseSchema = Depends(get_current_user),
                             db: Session = Depends(get_db)):
     user_image_update.user_id = current_user.user_id
     user_image.repository.update_user_image(db=db, user_image=user_image_update)
@@ -353,7 +353,7 @@ async def update_user_image(user_image_update: UserImage,
     }
 
 
-@router.get('/user/{user_id}', response_model=UserBase)
+@router.get('/user/{user_id}', response_model=UserBaseSchema)
 async def get_user(user_id: int, db: Session = Depends(get_db)):
     db_user = user.repository.get_user(db=db, user_id=user_id)
     if db_user is None:
@@ -361,8 +361,8 @@ async def get_user(user_id: int, db: Session = Depends(get_db)):
     return db_user
 
 
-@router.get('/user/me/', response_model=User)
-async def read_user_me(current_user: User = Depends(get_current_active_user)):
+@router.get('/user/me/', response_model=UserBaseSchema)
+async def read_user_me(current_user: UserBaseSchema = Depends(get_current_user)):
     return current_user
 
 

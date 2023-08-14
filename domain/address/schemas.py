@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
 
-class AddressBase(BaseModel):
+class AddressBaseSchema(BaseModel):
     user_id: int | None
     street_address: str | None
     apt_suite: str | None
@@ -14,9 +14,5 @@ class AddressBase(BaseModel):
         orm_mode = True
 
 
-class AddressCreate(AddressBase):
-    pass
-
-
-class Address(AddressBase):
+class AddressCreateSchema(AddressBaseSchema):
     pass

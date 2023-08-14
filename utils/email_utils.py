@@ -7,7 +7,7 @@ from pydantic import EmailStr
 from pydantic.main import BaseModel
 
 from config import env_vars
-from domain.user.schemas import UserBase
+from domain.user.schemas import UserBaseSchema
 from exception.UserExceptions import SendActivationEmailException
 
 env = Environment(
@@ -22,7 +22,7 @@ class EmailSchema(BaseModel):
 
 class Email:
 
-    def __init__(self, user: UserBase, url: str, email: List[EmailStr]):
+    def __init__(self, user: UserBaseSchema, url: str, email: List[EmailStr]):
         self.name = user.first_name
         self.sender = env_vars.EMAIL_FROM
         self.email = email

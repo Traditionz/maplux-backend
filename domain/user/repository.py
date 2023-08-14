@@ -2,12 +2,12 @@ from typing import Type
 
 from sqlalchemy.orm import Session
 
-from . import models, schemas
 from .models import User
+from .schemas import UserCreateSchema, UserBaseSchema
 
 
-def create_user(db: Session, user: schemas.UserCreate) -> User:
-    db_user = models.User(
+def create_user(db: Session, user: UserCreateSchema) -> User:
+    db_user = User(
         user_id=user.user_id,
         email=user.email,
         activated=user.activated,
@@ -23,28 +23,26 @@ def create_user(db: Session, user: schemas.UserCreate) -> User:
 
 
 def get_user(db: Session, user_id: int) -> User | None:
-    return db.query(models.User).filter(models.User.user_id == user_id).first()
+    return db.query(User).filter(User.user_id == user_id).first()
 
 
 def get_user_by_email(db: Session, email: str) -> User | None:
-    return db.query(models.User).filter(models.User.email == email).first()
+    return db.query(User).filter(User.email == email).first()
 
 
 def get_users(db: Session, skip: int = 0, limit: int = 100) -> list[Type[User]]:
-    return db.query(models.User).offset(skip).limit(limit).all()
+    return db.query(User).offset(skip).limit(limit).all()
 
 
-def update_user_activate(db: Session, user_update: schemas.User) -> User | None:
-    db_user = db.query(models.User). \
-        filter(models.User.user_id == user_update.user_id).first()
+def update_user_activate(db: Session, user_update: UserBaseSchema) -> User | None:
+    db_user = db.query(User).filter(User.user_id == user_update.user_id).first()
     setattr(db_user, "activated", user_update.activated)
     db.commit()
     return db_user
 
 
-def update_user_password(db: Session, user_update: schemas.UserCreate) -> User | None:
-    db_user = db.query(models.User). \
-        filter(models.User.user_id == user_update.user_id).first()
+def update_user_password(db: Session, user_update: UserCreateSchema) -> User | None:
+    db_user = db.query(User).filter(User.user_id == user_update.user_id).first()
     setattr(db_user, "password_salt", user_update.password_salt)
     setattr(db_user, "password_hashed", user_update.password_hashed)
     db.commit()

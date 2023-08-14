@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
 
-class UserImageBase(BaseModel):
+class UserImageBaseSchema(BaseModel):
     user_id: int | None
     image_ext: str
 
@@ -9,9 +9,6 @@ class UserImageBase(BaseModel):
         orm_mode = True
 
 
-class UserImageCreate(UserImageBase):
+class UserImageCreateSchema(UserImageBaseSchema):
     pass
 
-
-class UserImage(UserImageBase):
-    pass

@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from pydantic.schema import datetime
 
 
-class UserSuspensionBase(BaseModel):
+class UserSuspensionBaseSchema(BaseModel):
     user_id: int
     expiration_date: datetime
 
@@ -10,9 +10,5 @@ class UserSuspensionBase(BaseModel):
         orm_mode = True
 
 
-class UserSuspensionCreate(UserSuspensionBase):
-    pass
-
-
-class UserSuspension(UserSuspensionBase):
+class UserSuspensionCreateSchema(UserSuspensionBaseSchema):
     pass
