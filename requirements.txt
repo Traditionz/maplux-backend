@@ -4,6 +4,7 @@ FastAPI==0.99.0
 # Data
 pydantic==1.10.10
 sqlalchemy~=2.0.17
+sqlalchemy-stubs==0.4
 starlette==0.28.0
 
 # Env and startup
