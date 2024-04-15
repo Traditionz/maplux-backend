@@ -261,7 +261,7 @@ async def route_login_access_token(form_data: OAuth2PasswordRequestForm = Depend
 
 
 @router.get('/user/login/')
-async def login_user(auth: BasicAuth = Depends(basic_auth), db: Session = Depends(get_db)):
+async def login_user(auth: str = Depends(basic_auth), db: Session = Depends(get_db)):
     if not auth:
         response = Response(headers={"WWW-Authenticate": "Basic"}, status_code=401)
         return response

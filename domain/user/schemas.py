@@ -17,5 +17,5 @@ class UserBaseSchema(BaseModel):
 
 class UserCreateSchema(UserBaseSchema):
     password: str | None
-    password_salt: str | None
-    password_hashed: str | None
+    password_salt: bytes | None
+    password_hashed: bytes | None

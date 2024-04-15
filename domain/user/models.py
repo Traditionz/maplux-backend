@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, Date
+from sqlalchemy import Column, Integer, String, Boolean, Date, LargeBinary
 from sqlalchemy.orm import relationship
 
 from database import Base
@@ -10,8 +10,8 @@ class User(Base):
     user_id = Column(Integer, primary_key=True)
     email = Column(String, unique=True)
     activated = Column(Boolean)
-    password_salt = Column(String)
-    password_hashed = Column(String)
+    password_salt = Column(LargeBinary)
+    password_hashed = Column(LargeBinary)
     first_name = Column(String)
     last_name = Column(String)
     date_of_birth = Column(Date)
