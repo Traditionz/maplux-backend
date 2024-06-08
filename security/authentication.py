@@ -73,7 +73,7 @@ def confirm_activation_token(activation_token: ConfirmationToken) -> str:
 
 
 def authenticate_user(db: Session, email: str, password: str) -> User | None:
-    db_user = repository.get_user_by_email(db=db, email=email)
+    db_user = user.repository.get_user_by_email(db=db, email=email)
     if db_user is None:
         return None
     if not check_password(password.encode('utf-8'), db_user.password_hashed):
