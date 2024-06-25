@@ -23,8 +23,8 @@ from domain.user_image.schemas import UserImageBaseSchema, UserImageCreateSchema
 from domain.user_suspension import repository
 from enums.confirmation_token_type import ConfirmationTokenType
 from exception.UserExceptions import SendActivationEmailException, InvalidConfirmationTokenException
-from security.authentication import create_access_token, authenticate_user, get_current_user, BasicAuth, \
-    basic_auth, generate_activation_token, confirm_activation_token
+from security.authentication import create_access_token, authenticate_user, get_current_user, generate_activation_token, \
+    confirm_activation_token
 from utils.email_utils import Email
 
 router = APIRouter()
