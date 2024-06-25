@@ -31,7 +31,7 @@ from utils.email_utils import Email
 router = APIRouter()
 
 
-@router.post('/user/', status_code=status.HTTP_201_CREATED)
+@router.post('/users/', status_code=status.HTTP_201_CREATED)
 async def create_user(request: Request, new_user: UserCreateSchema, db: Session = Depends(get_db)):
     db_user = user.repository.get_user_by_email(db=db, email=new_user.email)
     if db_user:
@@ -77,7 +77,7 @@ async def create_user(request: Request, new_user: UserCreateSchema, db: Session 
     }
 
 
-@router.put('/user/activate/resend/')
+@router.put('/users/me/activate/resend/')
 async def resend_activation_token(request: Request,
                                   current_user: UserBaseSchema = Depends(get_current_user),
                                   db: Session = Depends(get_db)):
@@ -119,7 +119,7 @@ async def resend_activation_token(request: Request,
     }
 
 
-@router.get('/user/activate/{token}')
+@router.get('/users/me/activate/{token}')
 async def activate_user(token: str, db: Session = Depends(get_db)):
     try:
         db_token = confirmation_token.repository.get_confirmation_token(
@@ -181,7 +181,7 @@ async def activate_user(token: str, db: Session = Depends(get_db)):
         )
 
 
-@router.get("/user/password/forgot/{email}")
+@router.get("/users/me/password/forgot/{email}")
 async def forgot_password(request: Request, email: str, db: Session = Depends(get_db)):
     db_user = user.repository.get_user_by_email(
         db=db,
@@ -226,7 +226,7 @@ async def forgot_password(request: Request, email: str, db: Session = Depends(ge
     }
 
 
-@router.patch('/user/password/reset/{token}')
+@router.patch('/users/me/password/reset/{token}')
 async def reset_password(token: str, user_update: UserCreateSchema, db: Session = Depends(get_db)):
     try:
         db_token = confirmation_token.repository.get_confirmation_token(
@@ -316,14 +316,14 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
     }
 
 
-@router.get('/user/logout/')
+@router.get('/users/me/logout/')
 async def logout_user():
     response = Response()
     response.delete_cookie("Authorization")
     return response
 
 
-@router.post('/user/address/create/')
+@router.post('/users/me/address/create/')
 async def create_new_user_address(new_address: AddressCreateSchema,
                                   current_user: UserBaseSchema = Depends(get_current_user),
                                   db: Session = Depends(get_db)):
@@ -347,7 +347,7 @@ async def create_new_user_address(new_address: AddressCreateSchema,
     }
 
 
-@router.put('/user/address/update/')
+@router.put('/users/me/address/update/')
 async def update_new_user_address(new_address: AddressCreateSchema,
                                   current_user: UserBaseSchema = Depends(get_current_user),
                                   db: Session = Depends(get_db)):
@@ -362,7 +362,7 @@ async def update_new_user_address(new_address: AddressCreateSchema,
     }
 
 
-@router.post('/user/profile/image/create/')
+@router.post('/users/profile/image/create/')
 async def create_new_user_image(new_user_image: UserImageCreateSchema,
                                 current_user: UserBaseSchema = Depends(get_current_user),
                                 db: Session = Depends(get_db)):
@@ -387,7 +387,7 @@ async def create_new_user_image(new_user_image: UserImageCreateSchema,
     }
 
 
-@router.put('/user/profile/image/update/')
+@router.put('/users/me/profile/image/update/')
 async def update_user_image(user_image_update: UserImageBaseSchema,
                             current_user: UserBaseSchema = Depends(get_current_user),
                             db: Session = Depends(get_db)):
@@ -416,7 +416,7 @@ async def get_user(user_id: int, db: Session = Depends(get_db)):
     return db_user
 
 
-@router.get('/user/me/', response_model=UserBaseSchema)
+@router.get('/users/me/', response_model=UserBaseSchema)
 async def read_user_me(current_user: UserBaseSchema = Depends(get_current_user)):
     return current_user
 
@@ -426,7 +426,7 @@ async def home():
     return ["Hello"]
 
 
-@router.get('/user/suspend/temporary/{user_id}')
+@router.get('/users/{user_id}/suspend/temporary/')
 async def suspend_user_temporary(user_id: int, db: Session = Depends(get_db)):
     db_user = user.repository.get_user(
         db=db,
