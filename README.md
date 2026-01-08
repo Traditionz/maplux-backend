@@ -5,4 +5,4 @@ For the backend project, you can run:
 ### `uvicorn main:app --reload`
 
 Runs the backend app in the development mode.\
-Open [http://localhost:8000](http://localhost:8000) to view it in your browser.
+Open [http://127.0.0.1:8000](http://localhost:8000) to view it in your browser.
