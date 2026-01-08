@@ -1,7 +1,9 @@
 from pydantic import BaseModel
 
+from domain.camel_model import CamelModel
 
-class TokenSchema(BaseModel):
+
+class TokenSchema(CamelModel):
     access_token: str
     token_type: str
 

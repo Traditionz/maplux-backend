@@ -1,26 +1,28 @@
 # Core
-FastAPI==0.99.0
+FastAPI==0.128.0
 
 # Data
-pydantic==1.10.10
+pydantic==2.12.5
+pydantic-settings==2.12.0
 sqlalchemy~=2.0.17
 sqlalchemy-stubs==0.4
-starlette==0.28.0
+starlette
 
 # Env and startup
-uvicorn==0.23.1
+uvicorn==0.40.0
 python-dotenv~=1.0.0
 
 # Credentials
-fastapi-users==12.1.0
+fastapi-users==15.0.3
 snowflake-id==0.0.4
-bcrypt~=4.0.1
-python-multipart==0.0.9
-PyJWT==2.8.0
+bcrypt~=5.0.0
+python-multipart==0.0.21
+PyJWT==2.10.1
 itsdangerous==2.1.2
 
 # Html
 Jinja2~=3.1.3
 
 # Email
-Fastapi-mail==1.2.0
+Fastapi-mail==1.6.1
+

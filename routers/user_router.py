@@ -3,7 +3,7 @@ from datetime import timedelta
 import bcrypt
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.security import OAuth2PasswordRequestForm
-from pydantic import EmailStr
+from pydantic import NameEmail
 from snowflake import SnowflakeGenerator
 from sqlalchemy.orm import Session
 from starlette import status
@@ -65,7 +65,7 @@ async def create_user(request: Request, new_user: UserCreateSchema, db: Session 
             confirmation_token=activation_token
         )
         url = f"{request.url.scheme}://{request.url.hostname}:{request.url.port}/auth/user/activate/{token}"
-        await Email(new_user, url, [EmailStr(new_user.email)]).send_activation_email()
+        await Email(new_user, url, [NameEmail(name="", email=new_user.email)]).send_activation_email()
     except SendActivationEmailException:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail="Error sending activation email.")
@@ -111,7 +111,7 @@ async def resend_activation_token(request: Request,
         confirmation_token=activation_token
     )
     url = f"{request.url.scheme}://{request.url.hostname}:{request.url.port}/auth/user/activate/{token}"
-    await Email(current_user, url, [EmailStr(current_user.email)]).send_activation_email()
+    await Email(current_user, url, [NameEmail(name="", email=current_user.email)]).send_activation_email()
     return {
         "status": "success",
         "message": f"Activation token successfully has been resent to {current_user.user_id}'s email."
@@ -218,7 +218,11 @@ async def forgot_password(request: Request, email: str, db: Session = Depends(ge
     )
     # TODO: reset password will redirect to a webpage
     url = f"{request.url.scheme}://{request.url.hostname}:{request.url.port}/auth/pages/user/password/reset/{token}"
-    await Email(db_user, url, [EmailStr(db_user.email)]).send_password_reset_email()
+    await Email(
+        user=db_user,
+        url=url,
+        email=[NameEmail(name="", email=db_user.email)]
+    ).send_password_reset_email()
     return {
         "status": "success",
         "message": "The password reset email has been sent."
@@ -322,7 +326,7 @@ async def logout_user():
     return response
 
 
-@router.post('/users/me/address/create/')
+@router.post('/users/me/address/')
 async def create_new_user_address(new_address: AddressCreateSchema,
                                   current_user: UserBaseSchema = Depends(get_current_user),
                                   db: Session = Depends(get_db)):
@@ -346,7 +350,7 @@ async def create_new_user_address(new_address: AddressCreateSchema,
     }
 
 
-@router.put('/users/me/address/update/')
+@router.put('/users/me/address/')
 async def update_new_user_address(new_address: AddressCreateSchema,
                                   current_user: UserBaseSchema = Depends(get_current_user),
                                   db: Session = Depends(get_db)):
@@ -361,7 +365,7 @@ async def update_new_user_address(new_address: AddressCreateSchema,
     }
 
 
-@router.post('/users/profile/image/create/')
+@router.post('/users/profile/image/')
 async def create_new_user_image(new_user_image: UserImageCreateSchema,
                                 current_user: UserBaseSchema = Depends(get_current_user),
                                 db: Session = Depends(get_db)):
@@ -386,7 +390,7 @@ async def create_new_user_image(new_user_image: UserImageCreateSchema,
     }
 
 
-@router.put('/users/me/profile/image/update/')
+@router.put('/users/me/profile/image/')
 async def update_user_image(user_image_update: UserImageBaseSchema,
                             current_user: UserBaseSchema = Depends(get_current_user),
                             db: Session = Depends(get_db)):

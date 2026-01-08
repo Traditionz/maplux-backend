@@ -1,0 +1,25 @@
+{
+  "version": "1",
+  "name": "Maplux Bruno Collection",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ],
+  "size": 0,
+  "filesCount": 0,
+  "proxy": {
+    "inherit": false,
+    "config": {
+      "protocol": "http",
+      "hostname": "",
+      "port": "",
+      "auth": {
+        "username": "",
+        "password": ""
+      },
+      "bypassProxy": ""
+    },
+    "disabled": true
+  }
+}

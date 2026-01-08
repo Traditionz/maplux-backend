@@ -1,4 +1,4 @@
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, timezone
 from typing import Optional
 
 import bcrypt
@@ -12,7 +12,7 @@ from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from starlette.status import HTTP_401_UNAUTHORIZED
 
-from config import env_vars
+from config import settings
 from database import get_db
 from domain import user, user_suspension
 from domain.auth_token.schemas import TokenDataSchema
@@ -57,13 +57,13 @@ def check_password(password: bytes, password_hashed: bytes) -> bool:
 
 
 def generate_activation_token(current_user: UserBaseSchema, token_salt: str) -> str:
-    serializer = URLSafeTimedSerializer(env_vars.ACTIVATE_SECRET_KEY)
+    serializer = URLSafeTimedSerializer(settings.activate_secret_key)
     return serializer.dumps(current_user.email, salt=token_salt)
 
 
 def confirm_activation_token(activation_token: ConfirmationToken) -> str:
     try:
-        serializer = URLSafeTimedSerializer(env_vars.ACTIVATE_SECRET_KEY)
+        serializer = URLSafeTimedSerializer(settings.activate_secret_key)
         email = serializer.loads(
             activation_token.token, salt=activation_token.token_salt, max_age=activation_token.max_age
         )
@@ -84,16 +84,16 @@ def authenticate_user(db: Session, email: str, password: str) -> User | None:
 def create_access_token(data: dict, expires: timedelta | None = None) -> str:
     to_encode = data.copy()
     if expires:
-        expire = datetime.utcnow() + expires
+        expire = datetime.now(timezone.utc) + expires
     else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
+        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, env_vars.JWT_SECRET_KEY, algorithm=env_vars.JWT_ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
     return encoded_jwt
 
 
 async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User | None:
-    payload = jwt.decode(token, env_vars.JWT_SECRET_KEY, algorithms=[env_vars.JWT_ALGORITHM])
+    payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
     email: str = payload.get('sub')
     if email is None:
         raise HTTPException(status_code=401, detail="Incorrect email or password.")

@@ -1,0 +1,28 @@
+meta {
+  name: create user
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://127.0.0.1:8000/auth/users/
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+      "email": "maplux.test@gmail.com",
+      "firstName": "John",
+      "lastName": "Doe",
+      "dateOfBirth": "1990-01-01",
+      "phoneNumber": "+1234567890",
+      "activated": false,
+      "password": "Test123"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

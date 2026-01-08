@@ -3,10 +3,10 @@ from typing import List
 
 from fastapi_mail import ConnectionConfig, FastMail, MessageSchema, MessageType
 from jinja2 import Environment, select_autoescape, FileSystemLoader
-from pydantic import EmailStr
+from pydantic import NameEmail
 from pydantic.main import BaseModel
 
-from config import env_vars
+from config import settings
 from domain.user.schemas import UserBaseSchema
 from exception.UserExceptions import SendActivationEmailException
 
@@ -17,25 +17,25 @@ env = Environment(
 
 
 class EmailSchema(BaseModel):
-    email: List[EmailStr]
+    email: List[NameEmail]
 
 
 class Email:
 
-    def __init__(self, user: UserBaseSchema, url: str, email: List[EmailStr]):
+    def __init__(self, user: UserBaseSchema, url: str, email: List[NameEmail]):
         self.name = user.first_name
-        self.sender = env_vars.EMAIL_FROM
+        self.sender = settings.email_from
         self.email = email
         self.url = url
 
     async def send_email(self, subject, template) -> None:
 
         conf = ConnectionConfig(
-            MAIL_USERNAME=env_vars.EMAIL_USERNAME,
-            MAIL_PASSWORD=env_vars.EMAIL_PASSWORD,
-            MAIL_FROM=env_vars.EMAIL_FROM,
-            MAIL_PORT=env_vars.EMAIL_PORT,
-            MAIL_SERVER=env_vars.EMAIL_SERVER,
+            MAIL_USERNAME=settings.email_username,
+            MAIL_PASSWORD=settings.email_password,
+            MAIL_FROM=settings.email_from,
+            MAIL_PORT=settings.email_port,
+            MAIL_SERVER=settings.email_server,
             MAIL_STARTTLS=False,
             MAIL_SSL_TLS=False,
             USE_CREDENTIALS=True,
@@ -61,7 +61,7 @@ class Email:
 
     async def send_activation_email(self):
         try:
-            email_subject = f"Activate your {env_vars.APP_NAME} account"
+            email_subject = f"Activate your {settings.app_name} account"
             await self.send_email(email_subject, 'email_activation')
         except Exception:
 
@@ -69,7 +69,7 @@ class Email:
 
     async def send_password_reset_email(self):
         try:
-            email_subject = f"Password Reset - {env_vars.APP_NAME}"
+            email_subject = f"Password Reset - {settings.app_name}"
             await self.send_email(email_subject, 'reset_password')
         except Exception:
 

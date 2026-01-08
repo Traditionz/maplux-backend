@@ -2,7 +2,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from starlette.middleware.cors import CORSMiddleware
 
-from config import env_vars
+from config import settings
 from database import Base, engine
 from routers.api import router
 from routers.handlers.http_error import http_exception_handler
@@ -15,7 +15,7 @@ load_dotenv()
 app = FastAPI()
 
 origins = [
-    env_vars.CLIENT_ORIGIN,
+    settings.client_origin,
 ]
 
 # Allow CORS
@@ -28,7 +28,7 @@ app.add_middleware(
 )
 
 # Mapping api routes
-app.include_router(router, prefix=env_vars.API_PREFIX)
+app.include_router(router, prefix=settings.api_prefix)
 
 # Add exception handlers
 app.add_exception_handler(HTTPException, http_exception_handler)
@@ -38,4 +38,4 @@ Base.metadata.create_all(bind=engine)
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="localhost", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=8000)

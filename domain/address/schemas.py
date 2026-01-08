@@ -1,7 +1,7 @@
-from pydantic import BaseModel
+from domain.camel_model import CamelModel
 
 
-class AddressBaseSchema(BaseModel):
+class AddressBaseSchema(CamelModel):
     user_id: int | None
     street_address: str | None
     apt_suite: str | None
@@ -9,10 +9,6 @@ class AddressBaseSchema(BaseModel):
     state_province: str | None
     postal_zip: str | None
     country: str | None
-
-    class Config:
-        orm_mode = True
-
 
 class AddressCreateSchema(AddressBaseSchema):
     pass

@@ -1,28 +1,35 @@
-from pydantic import BaseSettings, EmailStr
+from pydantic import EmailStr
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class EnvVars(BaseSettings):
-    APP_NAME: str
+class Settings(BaseSettings):
+    # ── Core app settings ───────────────────────────────────────
+    app_name: str
+    client_origin: str
+    api_prefix: str = "/api"
 
-    CLIENT_ORIGIN: str
+    # ── Database ────────────────────────────────────────────────
+    database_url: str
 
-    API_PREFIX: str
+    # ── Security ────────────────────────────────────────────────
+    activate_secret_key: str
+    jwt_secret_key: str
+    jwt_algorithm: str = "HS256"
 
-    DATABASE_URL: str
+    # ── Email ───────────────────────────────────────────────────
+    email_username: str
+    email_password: str
+    email_from: EmailStr
+    email_port: int = 587
+    email_server: str = "smtp.gmail.com"
 
-    ACTIVATE_SECRET_KEY: str
-
-    JWT_SECRET_KEY: str
-    JWT_ALGORITHM: str
-
-    EMAIL_USERNAME: str
-    EMAIL_PASSWORD: str
-    EMAIL_FROM: EmailStr
-    EMAIL_PORT: int
-    EMAIL_SERVER: str
-
-    class Config:
-        env_file = './.env'
+    model_config = SettingsConfigDict(
+        env_file=".env",  # relative to project root or absolute path
+        env_file_encoding="utf-8",
+        case_sensitive=False,  # very useful
+        extra="ignore",  # ignore unknown env vars
+        # env_prefix="MYAPP_"         # optional prefix if you want
+    )
 
 
-env_vars = EnvVars()
+settings = Settings()

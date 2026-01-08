@@ -1,13 +1,11 @@
-from pydantic import BaseModel
-from pydantic.schema import datetime
+from datetime import datetime
+
+from domain.camel_model import CamelModel
 
 
-class UserSuspensionBaseSchema(BaseModel):
+class UserSuspensionBaseSchema(CamelModel):
     user_id: int
     expiration_date: datetime
-
-    class Config:
-        orm_mode = True
 
 
 class UserSuspensionCreateSchema(UserSuspensionBaseSchema):

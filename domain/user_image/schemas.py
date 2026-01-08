@@ -1,12 +1,9 @@
-from pydantic import BaseModel
+from domain.camel_model import CamelModel
 
 
-class UserImageBaseSchema(BaseModel):
+class UserImageBaseSchema(CamelModel):
     user_id: int | None
     image_ext: str
-
-    class Config:
-        orm_mode = True
 
 
 class UserImageCreateSchema(UserImageBaseSchema):

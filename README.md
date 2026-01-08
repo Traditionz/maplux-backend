@@ -1,4 +1,4 @@
-Use Python 3.10.8
+Use Python 3.14.2
 
 For the backend project, you can run:
 

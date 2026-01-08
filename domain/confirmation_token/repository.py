@@ -1,7 +1,6 @@
 from sqlalchemy.orm import Session
 
 from enums.confirmation_token_type import ConfirmationTokenType
-
 from .models import ConfirmationToken
 from .schemas import ConfirmationTokenCreateSchema
 
