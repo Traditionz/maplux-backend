@@ -1,4 +1,12 @@
 .idea/
+.venv/
 __pycache__/
-
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.env
+*.sqlite
+*.db
 Maplux.db
+Maplux.sqlite

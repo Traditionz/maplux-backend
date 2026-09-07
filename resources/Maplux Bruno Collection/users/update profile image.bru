@@ -1,0 +1,15 @@
+meta {
+  name: get profile image
+  type: http
+  seq: 12
+}
+
+get {
+  url: {{baseUrl}}/auth/users/me/image
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+}

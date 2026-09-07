@@ -1,6 +1,36 @@
-FastAPI
-pydantic
-sqlalchemy
-uvicorn
-python-dotenv
-starlette
+# Core
+fastapi==0.141.1
+# fastapi-mail 1.6.8 requires Starlette 1.x; FastAPI 0.141 accepts it.
+starlette==1.6.0
+
+# Data
+pydantic==2.13.5
+pydantic-settings==2.15.0
+email-validator==2.3.0
+sqlalchemy==2.0.52
+
+# Env and startup
+uvicorn==0.52.4
+python-dotenv==1.2.3
+
+# Credentials
+snowflake-id==1.0.2
+pwdlib==0.3.1
+bcrypt==5.0.0
+python-multipart==0.0.32
+PyJWT==2.13.0
+itsdangerous==2.2.0
+
+# Html
+Jinja2==3.1.6
+
+# Email
+fastapi-mail==1.6.8
+
+# Test / lint
+pytest==9.1.1
+pytest-asyncio==1.4.0
+pytest-cov==7.1.0
+httpx==0.28.1
+httpx2==2.12.0
+ruff==0.16.6

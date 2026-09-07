@@ -1,0 +1,15 @@
+meta {
+  name: get address
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{baseUrl}}/auth/users/me/address
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+}

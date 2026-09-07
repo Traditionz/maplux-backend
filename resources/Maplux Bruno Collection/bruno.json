@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "Maplux Bruno Collection",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

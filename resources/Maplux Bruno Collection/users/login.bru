@@ -1,0 +1,32 @@
+meta {
+  name: login
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/auth/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "maplux.test@gmail.com",
+    "password": "Test1234"
+  }
+}
+
+script:post-response {
+  const body = res.getBody();
+  if (body && body.accessToken) {
+    bru.setEnvVar("token", body.accessToken);
+  }
+  if (body && body.refreshToken) {
+    bru.setEnvVar("refreshToken", body.refreshToken);
+  }
+}
+
+settings {
+  encodeUrl: true
+}

@@ -1,0 +1,21 @@
+meta {
+  name: suspend user
+  type: http
+  seq: 14
+}
+
+post {
+  url: {{baseUrl}}/auth/users/{{userId}}/suspensions
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "durationDays": 5
+  }
+}
+
+settings {
+  encodeUrl: true
+}

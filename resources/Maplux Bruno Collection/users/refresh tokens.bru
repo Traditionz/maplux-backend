@@ -1,0 +1,31 @@
+meta {
+  name: refresh tokens
+  type: http
+  seq: 16
+}
+
+post {
+  url: {{baseUrl}}/auth/refresh
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "refreshToken": "{{refreshToken}}"
+  }
+}
+
+script:post-response {
+  const body = res.getBody();
+  if (body && body.accessToken) {
+    bru.setEnvVar("token", body.accessToken);
+  }
+  if (body && body.refreshToken) {
+    bru.setEnvVar("refreshToken", body.refreshToken);
+  }
+}
+
+settings {
+  encodeUrl: true
+}

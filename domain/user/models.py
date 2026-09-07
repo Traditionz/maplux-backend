@@ -1,5 +1,7 @@
-from sqlalchemy import Column, Integer, String
-from sqlalchemy.orm import relationship
+from datetime import date
+
+from sqlalchemy import BigInteger, Boolean, Date, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database import Base
 
@@ -7,14 +9,17 @@ from database import Base
 class User(Base):
     __tablename__ = "user"
 
-    user_id = Column(Integer, primary_key=True)
-    email = Column(String, unique=True)
-    password_hashed = Column(String)
-    password_salt = Column(String)
-    first_name = Column(String)
-    last_name = Column(String)
-    date_of_birth = Column(String)
-    email_confirmation_token = Column(String)
-    phone_number = Column(String)
+    user_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    email: Mapped[str] = mapped_column(String, unique=True, index=True)
+    activated: Mapped[bool] = mapped_column(Boolean, default=False)
+    password_hash: Mapped[str] = mapped_column(String)
+    first_name: Mapped[str] = mapped_column(String)
+    last_name: Mapped[str] = mapped_column(String)
+    date_of_birth: Mapped[date] = mapped_column(Date)
+    phone_number: Mapped[str] = mapped_column(String)
+    is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
 
-    user_status = relationship("UserStatus", back_populates="user", uselist=False)
+    user_suspension = relationship("UserSuspension", back_populates="user", uselist=False)
+    address = relationship("Address", back_populates="user", uselist=False)
+    user_image = relationship("UserImage", back_populates="user", uselist=False)
+    confirmation_token = relationship("ConfirmationToken", back_populates="user")

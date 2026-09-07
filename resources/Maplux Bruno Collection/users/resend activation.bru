@@ -1,0 +1,15 @@
+meta {
+  name: resend activation
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/auth/verify-email/resend
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+}
