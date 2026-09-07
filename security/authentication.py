@@ -1,10 +1,13 @@
 from datetime import UTC, datetime, timedelta
+from enum import StrEnum
 
-import bcrypt
 import jwt
 from fastapi import Depends, HTTPException
 from itsdangerous import BadSignature, BadTimeSignature, SignatureExpired, URLSafeTimedSerializer
 from jwt import InvalidTokenError
+from pwdlib import PasswordHash
+from pwdlib.exceptions import UnknownHashError
+from pwdlib.hashers.bcrypt import BcryptHasher
 from sqlalchemy.orm import Session
 from starlette.responses import Response
 from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_403_FORBIDDEN
@@ -12,34 +15,32 @@ from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_403_FORBIDDEN
 from config import settings
 from database import get_db
 from domain import user, user_suspension
-from domain.auth_token.schemas import TokenDataSchema
+from domain.auth_token.schemas import TokenDataSchema, TokenSchema
 from domain.confirmation_token.models import ConfirmationToken
 from domain.user.models import User
 from exception.UserExceptions import InvalidConfirmationTokenException
-from security.cookie import OAuth2PasswordBearerCookie
+from security.cookie import ACCESS_COOKIE, REFRESH_COOKIE, BearerOrCookieAuth
 
-oauth2_scheme = OAuth2PasswordBearerCookie(tokenUrl="/auth/login/")
+oauth2_scheme = BearerOrCookieAuth()
+password_hasher = PasswordHash((BcryptHasher(),))
 
 # Precomputed bcrypt hash so missing-user lookups take a similar amount of time.
-_DUMMY_PASSWORD_HASH = b"$2b$12$kb..kFbBjij2ZnJpeXTp0OziKUrD9768P/URCPFW0rT9CGVj8jJeK"
-
-COOKIE_NAME = "Authorization"
+_DUMMY_PASSWORD_HASH = "$2b$12$BdMVCRkRZ1gEXAbdyPCFkOVvSmbgjW9TXnkLfd9r4O6wEvAX2goQO"
 
 
-def get_hashed_password(password: bytes, password_salt: bytes) -> bytes:
-    return bcrypt.hashpw(password, password_salt)
+class TokenType(StrEnum):
+    ACCESS = "access"
+    REFRESH = "refresh"
 
 
-def hash_password(plain_password: str) -> tuple[bytes, bytes]:
-    password_salt = bcrypt.gensalt(12)
-    password_hashed = get_hashed_password(plain_password.encode("utf-8"), password_salt)
-    return password_salt, password_hashed
+def hash_password(plain_password: str) -> str:
+    return password_hasher.hash(plain_password)
 
 
-def check_password(password: bytes, password_hashed: bytes) -> bool:
+def verify_password(plain_password: str, password_hash: str) -> bool:
     try:
-        return bcrypt.checkpw(password, password_hashed)
-    except (TypeError, ValueError):
+        return password_hasher.verify(plain_password, password_hash)
+    except (TypeError, ValueError, UnknownHashError):
         return False
 
 
@@ -62,49 +63,77 @@ def confirm_activation_token(activation_token: ConfirmationToken) -> str:
 
 def authenticate_user(db: Session, email: str, password: str) -> User | None:
     db_user = user.repository.get_user_by_email(db=db, email=email)
-    password_hashed = (
-        db_user.password_hashed
-        if db_user is not None and db_user.password_hashed
+    password_hash = (
+        db_user.password_hash
+        if db_user is not None and db_user.password_hash
         else _DUMMY_PASSWORD_HASH
     )
-    password_ok = check_password(password.encode("utf-8"), password_hashed)
+    password_ok = verify_password(password, password_hash)
     if db_user is None or not password_ok:
         return None
     return db_user
 
 
-def create_access_token(data: dict, expires: timedelta | None = None) -> str:
-    to_encode = data.copy()
-    lifetime = expires if expires is not None else timedelta(minutes=settings.jwt_expire_minutes)
-    expire = datetime.now(UTC) + lifetime
-    to_encode.update({"exp": expire})
+def encode_token(payload: dict, expires: timedelta) -> str:
+    to_encode = payload.copy()
+    to_encode["exp"] = datetime.now(UTC) + expires
     return jwt.encode(to_encode, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
 
 
-def set_auth_cookie(response: Response, access_token: str) -> None:
-    max_age = settings.jwt_expire_minutes * 60
+def create_access_token(*, user_id: int, expires: timedelta | None = None) -> str:
+    lifetime = expires if expires is not None else timedelta(minutes=settings.jwt_expire_minutes)
+    return encode_token({"sub": str(user_id), "typ": TokenType.ACCESS.value}, lifetime)
+
+
+def create_refresh_token(*, user_id: int, expires: timedelta | None = None) -> str:
+    lifetime = expires if expires is not None else timedelta(days=settings.jwt_refresh_expire_days)
+    return encode_token({"sub": str(user_id), "typ": TokenType.REFRESH.value}, lifetime)
+
+
+def issue_token_pair(db_user: User) -> TokenSchema:
+    access_token = create_access_token(user_id=db_user.user_id)
+    refresh_token = create_refresh_token(user_id=db_user.user_id)
+    return TokenSchema(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        token_type="bearer",
+        expires_in=settings.jwt_expire_minutes * 60,
+    )
+
+
+def set_auth_cookies(response: Response, tokens: TokenSchema) -> None:
     response.set_cookie(
-        key=COOKIE_NAME,
-        value=f"Bearer {access_token}",
+        key=ACCESS_COOKIE,
+        value=tokens.access_token,
         httponly=True,
         secure=settings.cookie_secure,
         samesite=settings.cookie_samesite,
-        max_age=max_age,
+        max_age=settings.jwt_expire_minutes * 60,
+        path="/",
+    )
+    response.set_cookie(
+        key=REFRESH_COOKIE,
+        value=tokens.refresh_token,
+        httponly=True,
+        secure=settings.cookie_secure,
+        samesite=settings.cookie_samesite,
+        max_age=settings.jwt_refresh_expire_days * 24 * 60 * 60,
         path="/",
     )
 
 
-def clear_auth_cookie(response: Response) -> None:
-    response.delete_cookie(
-        key=COOKIE_NAME,
-        path="/",
-        httponly=True,
-        secure=settings.cookie_secure,
-        samesite=settings.cookie_samesite,
-    )
+def clear_auth_cookies(response: Response) -> None:
+    for key in (ACCESS_COOKIE, REFRESH_COOKIE):
+        response.delete_cookie(
+            key=key,
+            path="/",
+            httponly=True,
+            secure=settings.cookie_secure,
+            samesite=settings.cookie_samesite,
+        )
 
 
-def decode_access_token(token: str) -> TokenDataSchema:
+def decode_token(token: str, *, expected_type: TokenType) -> TokenDataSchema:
     try:
         payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
     except InvalidTokenError as exc:
@@ -114,14 +143,23 @@ def decode_access_token(token: str) -> TokenDataSchema:
             headers={"WWW-Authenticate": "Bearer"},
         ) from exc
 
-    email = payload.get("sub")
-    if not email or not isinstance(email, str):
+    subject = payload.get("sub")
+    token_type = payload.get("typ")
+    if not isinstance(subject, str) or not subject or token_type != expected_type.value:
         raise HTTPException(
             status_code=HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials.",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    return TokenDataSchema(email=email)
+    try:
+        user_id = int(subject)
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(
+            status_code=HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials.",
+            headers={"WWW-Authenticate": "Bearer"},
+        ) from exc
+    return TokenDataSchema(user_id=user_id, token_type=expected_type.value)
 
 
 def check_banned_user(current_user: User, db: Session) -> None:
@@ -144,8 +182,8 @@ def check_current_active_user(current_user: User) -> None:
 
 
 async def _get_user_from_token(token: str, db: Session, *, require_activated: bool) -> User:
-    token_data = decode_access_token(token)
-    current_user = user.repository.get_user_by_email(db, email=token_data.email)
+    token_data = decode_token(token, expected_type=TokenType.ACCESS)
+    current_user = user.repository.get_user(db, user_id=token_data.user_id)
     if current_user is None:
         raise HTTPException(
             status_code=HTTP_401_UNAUTHORIZED,
@@ -168,3 +206,12 @@ async def get_current_user_allow_unactivated(
     token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
 ) -> User:
     return await _get_user_from_token(token, db, require_activated=False)
+
+
+async def get_admin_user(current_user: User = Depends(get_current_user)) -> User:
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=HTTP_403_FORBIDDEN,
+            detail="Admin privileges required.",
+        )
+    return current_user

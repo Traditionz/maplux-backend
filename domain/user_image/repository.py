@@ -1,3 +1,4 @@
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .models import UserImage
@@ -16,7 +17,7 @@ def create_user_image(db: Session, user_id: int, user_image: UserImageCreateSche
 
 
 def get_user_image(db: Session, user_id: int) -> UserImage | None:
-    return db.query(UserImage).filter(UserImage.user_id == user_id).first()
+    return db.execute(select(UserImage).where(UserImage.user_id == user_id)).scalar_one_or_none()
 
 
 def update_user_image(
@@ -29,3 +30,10 @@ def update_user_image(
     db.commit()
     db.refresh(db_user_image)
     return db_user_image
+
+
+def upsert_user_image(db: Session, user_id: int, user_image: UserImageCreateSchema) -> UserImage:
+    existing = update_user_image(db, user_id, user_image)
+    if existing is not None:
+        return existing
+    return create_user_image(db, user_id, user_image)

@@ -6,6 +6,7 @@ from domain.address.schemas import AddressCreateSchema
 from domain.confirmation_token import repository as token_repository
 from domain.confirmation_token.schemas import ConfirmationTokenCreateSchema
 from domain.user import repository as user_repository
+from domain.user.schemas import UserUpdateSchema
 from domain.user_image import repository as image_repository
 from domain.user_image.schemas import UserImageCreateSchema
 from domain.user_suspension import repository as suspension_repository
@@ -21,7 +22,12 @@ def test_user_repository_helpers(db):
     assert user_repository.get_user_by_email(db, "missing@example.com") is None
     assert len(user_repository.get_users(db)) == 2
     assert user_repository.activate_user(db, 999) is None
-    assert user_repository.update_user_password(db, 999, b"salt", b"hash") is None
+    assert user_repository.update_user_password(db, 999, "hash") is None
+    assert user_repository.update_user_profile(db, 999, UserUpdateSchema()) is None
+    updated_profile = user_repository.update_user_profile(
+        db, first.user_id, UserUpdateSchema(first_name="Janet")
+    )
+    assert updated_profile.first_name == "Janet"
 
 
 def test_address_repository_helpers(db):
@@ -43,6 +49,13 @@ def test_address_repository_helpers(db):
     )
     assert updated.city == "Dallas"
     assert address_repository.update_address(db, 999, payload) is None
+    upserted = address_repository.upsert_address(
+        db, user.user_id, payload.model_copy(update={"city": "Houston"})
+    )
+    assert upserted.city == "Houston"
+    other = make_user(db, email="addr-upsert@example.com")
+    created = address_repository.upsert_address(db, other.user_id, payload)
+    assert created.city == "Austin"
 
 
 def test_image_repository_helpers(db):
@@ -55,6 +68,15 @@ def test_image_repository_helpers(db):
     )
     assert updated.image_ext == "jpg"
     assert image_repository.update_user_image(db, 999, payload) is None
+    upserted = image_repository.upsert_user_image(
+        db, user.user_id, UserImageCreateSchema(image_ext="webp")
+    )
+    assert upserted.image_ext == "webp"
+    other = make_user(db, email="img-upsert@example.com")
+    created = image_repository.upsert_user_image(
+        db, other.user_id, UserImageCreateSchema(image_ext="gif")
+    )
+    assert created.image_ext == "gif"
 
 
 def test_confirmation_token_repository_helpers(db):

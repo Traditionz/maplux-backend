@@ -1,6 +1,6 @@
-from enum import Enum
+from enum import StrEnum
 
 
-class ConfirmationTokenType(str, Enum):
+class ConfirmationTokenType(StrEnum):
     ACCOUNT_ACTIVATION = "ACCOUNT_ACTIVATION"
     PASSWORD_RESET = "PASSWORD_RESET"

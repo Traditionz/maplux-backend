@@ -1,19 +1,13 @@
 meta {
-  name: update profile image
+  name: get profile image
   type: http
   seq: 12
 }
 
-put {
-  url: {{baseUrl}}/auth/users/me/profile/image/
-  body: json
+get {
+  url: {{baseUrl}}/auth/users/me/image
+  body: none
   auth: inherit
-}
-
-body:json {
-  {
-    "imageExt": "jpg"
-  }
 }
 
 settings {

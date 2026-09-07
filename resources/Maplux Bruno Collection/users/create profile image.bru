@@ -1,11 +1,11 @@
 meta {
-  name: create profile image
+  name: upsert profile image
   type: http
   seq: 11
 }
 
-post {
-  url: {{baseUrl}}/auth/users/me/profile/image/
+put {
+  url: {{baseUrl}}/auth/users/me/image
   body: json
   auth: inherit
 }

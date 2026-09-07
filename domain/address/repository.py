@@ -1,3 +1,4 @@
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .models import Address
@@ -5,7 +6,7 @@ from .schemas import AddressCreateSchema
 
 
 def get_address(db: Session, user_id: int) -> Address | None:
-    return db.query(Address).filter(Address.user_id == user_id).first()
+    return db.execute(select(Address).where(Address.user_id == user_id)).scalar_one_or_none()
 
 
 def create_address(db: Session, user_id: int, address: AddressCreateSchema) -> Address:
@@ -37,3 +38,10 @@ def update_address(db: Session, user_id: int, new_address: AddressCreateSchema) 
     db.commit()
     db.refresh(db_address)
     return db_address
+
+
+def upsert_address(db: Session, user_id: int, address: AddressCreateSchema) -> Address:
+    existing = update_address(db, user_id, address)
+    if existing is not None:
+        return existing
+    return create_address(db, user_id, address)

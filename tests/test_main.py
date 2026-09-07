@@ -26,9 +26,9 @@ def test_build_urls():
         f"{settings.client_origin.rstrip('/')}/password/reset/abc"
     )
     assert build_client_url("relative") == f"{settings.client_origin.rstrip('/')}/relative"
-    api_url = build_api_url("/users/me/activate/token")
+    api_url = build_api_url("/verify-email/token")
     assert settings.api_prefix.rstrip("/") in api_url
-    assert api_url.endswith("/users/me/activate/token")
+    assert api_url.endswith("/verify-email/token")
     assert build_api_url("users/")[-6:] == "users/"
 
 

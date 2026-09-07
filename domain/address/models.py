@@ -1,5 +1,5 @@
-from sqlalchemy import BigInteger, Column, ForeignKey, String
-from sqlalchemy.orm import relationship
+from sqlalchemy import BigInteger, ForeignKey, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database import Base
 
@@ -7,12 +7,12 @@ from database import Base
 class Address(Base):
     __tablename__ = "address"
 
-    user_id = Column(BigInteger, ForeignKey("user.user_id"), primary_key=True)
-    street_address = Column(String, nullable=False)
-    apt_suite = Column(String)
-    city = Column(String, nullable=False)
-    state_province = Column(String, nullable=False)
-    postal_zip = Column(String, nullable=False)
-    country = Column(String, nullable=False)
+    user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("user.user_id"), primary_key=True)
+    street_address: Mapped[str] = mapped_column(String)
+    apt_suite: Mapped[str | None] = mapped_column(String)
+    city: Mapped[str] = mapped_column(String)
+    state_province: Mapped[str] = mapped_column(String)
+    postal_zip: Mapped[str] = mapped_column(String)
+    country: Mapped[str] = mapped_column(String)
 
     user = relationship("User", back_populates="address", uselist=False)

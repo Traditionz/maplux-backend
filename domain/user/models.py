@@ -1,5 +1,7 @@
-from sqlalchemy import BigInteger, Boolean, Column, Date, LargeBinary, String
-from sqlalchemy.orm import relationship
+from datetime import date
+
+from sqlalchemy import BigInteger, Boolean, Date, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database import Base
 
@@ -7,16 +9,15 @@ from database import Base
 class User(Base):
     __tablename__ = "user"
 
-    user_id = Column(BigInteger, primary_key=True)
-    email = Column(String, unique=True, nullable=False, index=True)
-    activated = Column(Boolean, nullable=False, default=False)
-    password_salt = Column(LargeBinary, nullable=False)
-    password_hashed = Column(LargeBinary, nullable=False)
-    first_name = Column(String, nullable=False)
-    last_name = Column(String, nullable=False)
-    date_of_birth = Column(Date, nullable=False)
-    phone_number = Column(String, nullable=False)
-    is_admin = Column(Boolean, nullable=False, default=False)
+    user_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    email: Mapped[str] = mapped_column(String, unique=True, index=True)
+    activated: Mapped[bool] = mapped_column(Boolean, default=False)
+    password_hash: Mapped[str] = mapped_column(String)
+    first_name: Mapped[str] = mapped_column(String)
+    last_name: Mapped[str] = mapped_column(String)
+    date_of_birth: Mapped[date] = mapped_column(Date)
+    phone_number: Mapped[str] = mapped_column(String)
+    is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
 
     user_suspension = relationship("UserSuspension", back_populates="user", uselist=False)
     address = relationship("Address", back_populates="user", uselist=False)

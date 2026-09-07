@@ -1,5 +1,6 @@
 from datetime import UTC, datetime, timedelta
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .models import UserSuspension
@@ -11,7 +12,9 @@ def _utc_now() -> datetime:
 
 
 def get_user_suspension(db: Session, user_id: int) -> UserSuspension | None:
-    return db.query(UserSuspension).filter(UserSuspension.user_id == user_id).first()
+    return db.execute(
+        select(UserSuspension).where(UserSuspension.user_id == user_id)
+    ).scalar_one_or_none()
 
 
 def update_user_suspension(
@@ -38,8 +41,8 @@ def _upsert_suspension(db: Session, user_id: int, expiration_date: datetime) -> 
     return db_user_suspension
 
 
-def create_user_suspension_short(db: Session, user_id: int) -> UserSuspension:
-    return _upsert_suspension(db, user_id, _utc_now() + timedelta(days=5))
+def create_user_suspension_short(db: Session, user_id: int, days: int = 5) -> UserSuspension:
+    return _upsert_suspension(db, user_id, _utc_now() + timedelta(days=days))
 
 
 def create_user_suspension_indefinite(db: Session, user_id: int) -> UserSuspension:

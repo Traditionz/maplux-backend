@@ -1,24 +1,13 @@
 meta {
-  name: update address
+  name: get address
   type: http
   seq: 10
 }
 
-put {
-  url: {{baseUrl}}/auth/users/me/address/
-  body: json
+get {
+  url: {{baseUrl}}/auth/users/me/address
+  body: none
   auth: inherit
-}
-
-body:json {
-  {
-    "streetAddress": "123 Main St",
-    "aptSuite": "4B",
-    "city": "Dallas",
-    "stateProvince": "TX",
-    "postalZip": "78701",
-    "country": "US"
-  }
 }
 
 settings {

@@ -68,7 +68,7 @@ def mock_email(monkeypatch: pytest.MonkeyPatch):
             return None
 
     FakeEmail.instances = []
-    monkeypatch.setattr("routers.user_router.Email", FakeEmail)
+    monkeypatch.setattr("routers.auth_router.Email", FakeEmail)
     return FakeEmail
 
 
@@ -82,7 +82,6 @@ def make_user(
     first_name: str = "Jane",
     last_name: str = "Doe",
 ):
-    password_salt, password_hashed = hash_password(password)
     return user_repository.create_user(
         db,
         UserCreateInternalSchema(
@@ -93,15 +92,14 @@ def make_user(
             last_name=last_name,
             date_of_birth=date(1990, 1, 1),
             phone_number="+1234567890",
-            password_salt=password_salt,
-            password_hashed=password_hashed,
+            password_hash=hash_password(password),
             is_admin=is_admin,
         ),
     )
 
 
-def auth_header(email: str) -> dict[str, str]:
-    token = create_access_token({"sub": email})
+def auth_header(user_id: int) -> dict[str, str]:
+    token = create_access_token(user_id=user_id)
     return {"Authorization": f"Bearer {token}"}
 
 

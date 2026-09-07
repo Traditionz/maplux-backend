@@ -16,7 +16,8 @@ class Settings(BaseSettings):
     activate_secret_key: str
     jwt_secret_key: str
     jwt_algorithm: str = "HS256"
-    jwt_expire_minutes: int = 60
+    jwt_expire_minutes: int = 15
+    jwt_refresh_expire_days: int = 14
     cookie_secure: bool = False
     cookie_samesite: str = "lax"
 

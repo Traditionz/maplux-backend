@@ -1,11 +1,11 @@
 meta {
-  name: create address
+  name: upsert address
   type: http
   seq: 9
 }
 
-post {
-  url: {{baseUrl}}/auth/users/me/address/
+put {
+  url: {{baseUrl}}/auth/users/me/address
   body: json
   auth: inherit
 }

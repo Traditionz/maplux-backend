@@ -1,19 +1,18 @@
 meta {
-  name: login
+  name: refresh tokens
   type: http
-  seq: 2
+  seq: 16
 }
 
 post {
-  url: {{baseUrl}}/auth/login
+  url: {{baseUrl}}/auth/refresh
   body: json
   auth: none
 }
 
 body:json {
   {
-    "email": "maplux.test@gmail.com",
-    "password": "Test1234"
+    "refreshToken": "{{refreshToken}}"
   }
 }
 

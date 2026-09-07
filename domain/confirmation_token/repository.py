@@ -1,3 +1,4 @@
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from enums.confirmation_token_type import ConfirmationTokenType
@@ -25,39 +26,33 @@ def create_confirmation_token(
 def get_confirmation_token(
     db: Session, token: str, token_type: ConfirmationTokenType
 ) -> ConfirmationToken | None:
-    return (
-        db.query(ConfirmationToken)
-        .filter(
+    return db.execute(
+        select(ConfirmationToken).where(
             ConfirmationToken.token == token,
             ConfirmationToken.token_type == token_type,
         )
-        .first()
-    )
+    ).scalar_one_or_none()
 
 
 def delete_confirmation_tokens_for_user(
     db: Session, user_id: int, token_type: ConfirmationTokenType
 ) -> int:
-    deleted = (
-        db.query(ConfirmationToken)
-        .filter(
+    result = db.execute(
+        delete(ConfirmationToken).where(
             ConfirmationToken.user_id == user_id,
             ConfirmationToken.token_type == token_type,
         )
-        .delete(synchronize_session=False)
     )
     db.commit()
-    return deleted
+    return result.rowcount
 
 
 def delete_confirmation_token(db: Session, token: str, token_type: ConfirmationTokenType) -> int:
-    deleted = (
-        db.query(ConfirmationToken)
-        .filter(
+    result = db.execute(
+        delete(ConfirmationToken).where(
             ConfirmationToken.token == token,
             ConfirmationToken.token_type == token_type,
         )
-        .delete(synchronize_session=False)
     )
     db.commit()
-    return deleted
+    return result.rowcount

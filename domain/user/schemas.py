@@ -50,6 +50,20 @@ class UserCreateSchema(CamelModel):
         return value
 
 
+class UserUpdateSchema(CamelModel):
+    first_name: str | None = Field(default=None, min_length=1, max_length=100)
+    last_name: str | None = Field(default=None, min_length=1, max_length=100)
+    date_of_birth: date | None = None
+    phone_number: str | None = Field(default=None, min_length=7, max_length=32)
+
+    @field_validator("date_of_birth")
+    @classmethod
+    def validate_date_of_birth(cls, value: date | None) -> date | None:
+        if value is None:
+            return value
+        return UserCreateSchema.validate_date_of_birth(value)
+
+
 class UserCreateInternalSchema(CamelModel):
     user_id: int
     email: EmailStr
@@ -58,14 +72,27 @@ class UserCreateInternalSchema(CamelModel):
     last_name: str
     date_of_birth: date
     phone_number: str
-    password_salt: bytes
-    password_hashed: bytes
+    password_hash: str
     is_admin: bool = False
 
 
+class LoginSchema(CamelModel):
+    email: EmailStr
+    password: str
+
+
+class RefreshSchema(CamelModel):
+    refresh_token: str | None = None
+
+
 class PasswordResetSchema(CamelModel):
+    token: str
     password: str = Field(min_length=8, max_length=72)
 
 
 class ForgotPasswordSchema(CamelModel):
     email: EmailStr
+
+
+class SuspensionCreateSchema(CamelModel):
+    duration_days: int = Field(default=5, ge=1, le=36525)

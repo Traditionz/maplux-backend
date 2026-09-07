@@ -4,7 +4,7 @@ import pytest
 from pydantic import ValidationError
 
 from config import Settings
-from domain.user.schemas import UserCreateSchema, _age_on
+from domain.user.schemas import UserCreateSchema, UserUpdateSchema, _age_on
 from enums.confirmation_token_type import ConfirmationTokenType
 
 
@@ -59,6 +59,10 @@ def test_user_create_schema_requires_adult():
             phone_number="+1234567890",
             password="Password123",
         )
+
+
+def test_user_update_schema_allows_null_date_of_birth():
+    assert UserUpdateSchema(date_of_birth=None).date_of_birth is None
 
 
 def test_confirmation_token_enum():
