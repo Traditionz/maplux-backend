@@ -1,0 +1,15 @@
+meta {
+  name: resend activation
+  type: http
+  seq: 5
+}
+
+put {
+  url: {{baseUrl}}/auth/users/me/activate/resend/
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+}

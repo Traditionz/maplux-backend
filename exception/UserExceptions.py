@@ -2,5 +2,8 @@ class InvalidConfirmationTokenException(Exception):
     pass
 
 
-class SendActivationEmailException(Exception):
+class SendEmailException(Exception):
     pass
+
+
+SendActivationEmailException = SendEmailException

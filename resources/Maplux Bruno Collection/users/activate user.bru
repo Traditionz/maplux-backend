@@ -1,0 +1,15 @@
+meta {
+  name: activate user
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/auth/users/me/activate/{{activationToken}}
+  body: none
+  auth: none
+}
+
+settings {
+  encodeUrl: true
+}

@@ -3,10 +3,6 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 
-###
-# Exception Handlers for filter exception error and personalize messages
-###
-
 async def http_exception_handler(_: Request, exc: HTTPException) -> JSONResponse:
-    """ Personalize response when HTTPException """
+    """Return HTTP errors as a consistent JSON errors list."""
     return JSONResponse({"errors": [exc.detail]}, status_code=exc.status_code)

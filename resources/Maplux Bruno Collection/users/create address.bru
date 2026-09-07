@@ -1,0 +1,26 @@
+meta {
+  name: create address
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{baseUrl}}/auth/users/me/address/
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "streetAddress": "123 Main St",
+    "aptSuite": "4B",
+    "city": "Austin",
+    "stateProvince": "TX",
+    "postalZip": "78701",
+    "country": "US"
+  }
+}
+
+settings {
+  encodeUrl: true
+}

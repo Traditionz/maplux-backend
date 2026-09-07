@@ -1,0 +1,15 @@
+meta {
+  name: suspend user temporary
+  type: http
+  seq: 14
+}
+
+post {
+  url: {{baseUrl}}/auth/users/{{userId}}/suspend/temporary/
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+}

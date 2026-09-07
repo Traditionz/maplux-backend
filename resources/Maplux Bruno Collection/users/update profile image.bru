@@ -1,0 +1,21 @@
+meta {
+  name: update profile image
+  type: http
+  seq: 12
+}
+
+put {
+  url: {{baseUrl}}/auth/users/me/profile/image/
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "imageExt": "jpg"
+  }
+}
+
+settings {
+  encodeUrl: true
+}

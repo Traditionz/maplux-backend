@@ -3,7 +3,7 @@ from enums.confirmation_token_type import ConfirmationTokenType
 
 
 class ConfirmationTokenBaseSchema(CamelModel):
-    user_id: int | None
+    user_id: int
     token: str
     token_salt: str
     token_type: ConfirmationTokenType

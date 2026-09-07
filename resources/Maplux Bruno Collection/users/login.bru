@@ -1,0 +1,27 @@
+meta {
+  name: login
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/auth/login/
+  body: formUrlEncoded
+  auth: none
+}
+
+body:form-urlencoded {
+  username: maplux.test@gmail.com
+  password: Test1234
+}
+
+script:post-response {
+  const body = res.getBody();
+  if (body && body.accessToken) {
+    bru.setEnvVar("token", body.accessToken);
+  }
+}
+
+settings {
+  encodeUrl: true
+}

@@ -1,0 +1,21 @@
+meta {
+  name: create profile image
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{baseUrl}}/auth/users/me/profile/image/
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "imageExt": "png"
+  }
+}
+
+settings {
+  encodeUrl: true
+}
